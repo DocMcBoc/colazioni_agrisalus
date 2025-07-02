@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prenotazioni Colazione</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #fefcf8;
+      --card: #fff;
+      --accent: #94d3ac;
+      --danger: #e63946;
+      --text: #333;
+      --muted: #777;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: 'Nunito', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 2rem;
+    }
+    h1 {
+      font-size: 2.2rem;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    h2 {
+      margin-bottom: 0.2rem;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: 600;
+    }
+    input, select, textarea, button {
+      width: 100%;
+      padding: 0.5rem;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      margin-top: 0.3rem;
+      font-family: inherit;
+      font-size: 1rem;
+    }
+    button {
+      margin-top: 1rem;
+      background-color: var(--accent);
+      color: white;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+    }
+    .booking-card {
+      background: #fef9f2;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      box-shadow: inset 0 0 0 1px #f0e9dc;
+    }
+    .booking-card h3 {
+      margin: 0 0 0.5rem 0;
+    }
+    .booking-card .actions {
+      text-align: right;
+    }
+    .booking-card .delete-button {
+      color: var(--danger);
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .muted {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #fff;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+  </style>
+</head>
+<body>
+  <div id="birthdayBanner" style="display: none; font-size: 1.5rem; color: var(--accent); text-align: center; margin-bottom: 1rem;">
+    🎉 Buon compleanno Silvia! 🎉
+  </div>
+
+  <div class="header-bar">
+    <h1>🍴 Prenotazioni colazione</h1>
+    <input type="date" id="date" />
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <h2>Aggiungi Nuova Colazione</h2>
+      <p class="muted" id="formDateDesc"></p>
+      <form id="breakfastForm">
+        <label>Ospite
+          <input type="text" id="ownerName" placeholder="Filemazio" required />
+        </label>
+        <label>Adulti
+          <input type="number" id="numAdults" min="0" max="15" value="1" required />
+        </label>
+        <label>Bambini
+          <input type="number" id="numChildren" min="0" max="15" value="0" required />
+        </label>
+        <label>Fascia Oraria
+          <select id="timeSlot">
+            <option value="07:30">07:30</option>
+            <option value="08:00">08:00</option>
+            <option value="08:30">08:30</option>
+            <option value="09:00">09:00</option>
+            <option value="09:30">09:30</option>
+            <option value="10:00">10:00</option>
+            <option value="10:30">10:30</option>
+            <option value="11:00">11:00</option>
+            <option value="11:30">11:30</option>
+          </select>
+        </label>
+        <label>Note (opzionale)
+          <textarea id="notes"></textarea>
+        </label>
+        <button type="submit">Aggiungi</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Programma Giornaliero</h2>
+      <p class="muted" id="summary"></p>
+      <div id="breakfastList"></div>
+    </div>
+  </div>
+
+<script>
+  let editingId = null;
+  const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwcurABKsq7rzY3lnBvsL0enJb7JNMTOjqNcd5wJ4YoE8X0_-ufQ1xqYM8pSCNJZ7xV/exec";
+
+  let allData = []; // Dati caricati da Sheets
+
+  // Carica dati da Google Sheets
+  async function loadData() {
+    try {
+      const response = await fetch(WEBAPP_URL + "?action=get");
+      if (!response.ok) throw new Error("Errore caricamento dati");
+      const json = await response.json();
+      // Assumi che json sia array di oggetti prenotazione
+      allData = json.map(item => ({
+        id: Number(item.id),
+        date: item.date,
+        ownerName: item.ownerName,
+        numAdults: Number(item.numAdults),
+        numChildren: Number(item.numChildren),
+        timeSlot: item.timeSlot,
+        notes: item.notes,
+        numBreakfasts: Number(item.numBreakfasts)
+      }));
+      renderList();
+    } catch (e) {
+      alert("Errore caricamento dati da Google Sheets: " + e.message);
+      allData = [];
+      renderList();
+    }
+  }
+
+  // Salva dati modificati su Google Sheets (aggiungi o modifica)
+  async function saveEntry(entry) {
+    try {
+      const response = await fetch(WEBAPP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "save", entry })
+      });
+      if (!response.ok) throw new Error("Errore salvataggio dati");
+      const result = await response.json();
+      if (result.success) {
+        await loadData();
+      } else {
+        alert("Errore dal server: " + (result.message || "Salvataggio fallito"));
+      }
+    } catch (e) {
+      alert("Errore di rete: " + e.message);
+    }
+  }
+
+  // Elimina entry
+  async function deleteEntry(id) {
+    if (!confirm("Sei sicuro di voler eliminare questa prenotazione?")) return;
+    try {
+      const response = await fetch(WEBAPP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", id })
+      });
+      if (!response.ok) throw new Error("Errore eliminazione dati");
+      const result = await response.json();
+      if (result.success) {
+        editingId = null;
+        document.getElementById("breakfastForm").reset();
+        document.querySelector("#breakfastForm button[type=submit]").textContent = "Aggiungi";
+        await loadData();
+      } else {
+        alert("Errore dal server: " + (result.message || "Eliminazione fallita"));
+      }
+    } catch (e) {
+      alert("Errore di rete: " + e.message);
+    }
+  }
+
+  // Render lista prenotazioni filtrata per data selezionata
+  function renderList() {
+    const list = document.getElementById("breakfastList");
+    const date = document.getElementById("date").value;
+    const data = allData.filter(b => b.date === date);
+
+    const summary = document.getElementById("summary");
+    summary.textContent = `Panoramica per ${date.split("-").reverse().join("/")}. Colazioni Totali: ${data.reduce((s,b)=>s+b.numBreakfasts,0)}`;
+
+    list.innerHTML = "";
+    const slots = ["07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30"];
+    slots.forEach(slot => {
+      const bookings = data.filter(b => b.timeSlot === slot);
+      if (bookings.length > 0) {
+        const slotDiv = document.createElement("div");
+        slotDiv.className = "booking-card";
+        slotDiv.innerHTML = `<h3>${slot} - ${bookings.length} prenotate</h3>`;
+        bookings.forEach(b => {
+          const el = document.createElement("div");
+          el.innerHTML = `
+            <strong>${escapeHtml(b.ownerName)}</strong> – ${b.numAdults} 👤 + ${b.numChildren} 👶 = ${b.numBreakfasts} tot.<br />
+            <span class="muted">${escapeHtml(b.notes || "")}</span>
+            <div class="actions">
+              <span class="delete-button" onclick="startEdit(${b.id})" style="cursor:pointer;">✏️</span> |
+              <span class="delete-button" onclick="deleteEntry(${b.id})" style="cursor:pointer;">🗑️</span>
+            </div>
+          `;
+          slotDiv.appendChild(el);
+        });
+        list.appendChild(slotDiv);
+      }
+    });
+  }
+
+  // Inizia modifica entry
+  function startEdit(id) {
+    const entry = allData.find(b => b.id === id);
+    if (!entry) return alert("Prenotazione non trovata");
+    editingId = entry.id;
+    document.getElementById("ownerName").value = entry.ownerName;
+    document.getElementById("numAdults").value = entry.numAdults;
+    document.getElementById("numChildren").value = entry.numChildren;
+    document.getElementById("timeSlot").value = entry.timeSlot;
+    document.getElementById("notes").value = entry.notes || "";
+    document.getElementById("date").value = entry.date;
+    document.querySelector("#breakfastForm button[type=submit]").textContent = "Salva Modifica";
+  }
+
+  // Escape HTML (piccolo accorgimento sicurezza)
+  function escapeHtml(text) {
+    return text.replace(/[&<>"']/g, function(m) {
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]);
+    });
+  }
+
+  // Submit form aggiungi/modifica
+  document.getElementById("breakfastForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const date = document.getElementById("date").value;
+    const ownerName = document.getElementById("ownerName").value.trim();
+    const numAdults = parseInt(document.getElementById("numAdults").value);
+    const numChildren = parseInt(document.getElementById("numChildren").value);
+    const timeSlot = document.getElementById("timeSlot").value;
+    const notes = document.getElementById("notes").value.trim();
+
+    const numBreakfasts = numAdults + numChildren;
+
+    if (!ownerName) {
+      alert("Inserisci il nome dell'ospite");
+      return;
+    }
+    if (numBreakfasts === 0) {
+      alert("Inserisci almeno 1 persona (adulto o bambino)");
+      return;
+    }
+
+    // Controlla limite 15 persone per fascia (escludendo modifica)
+    const currentBookings = allData.filter(b => b.date === date && b.timeSlot === timeSlot && b.id !== editingId);
+    const totalPeopleInSlot = currentBookings.reduce((sum, b) => sum + b.numBreakfasts, 0);
+    if (totalPeopleInSlot + numBreakfasts > 15) {
+      alert(`Limite raggiunto: massimo 15 persone per la fascia ${timeSlot}.`);
+      return;
+    }
+
+    const entry = {
+      id: editingId || Date.now(),
+      date,
+      ownerName,
+      numAdults,
+      numChildren,
+      timeSlot,
+      notes,
+      numBreakfasts,
+    };
+
+    await saveEntry(entry);
+
+    editingId = null;
+    this.reset();
+    document.querySelector("#breakfastForm button[type=submit]").textContent = "Aggiungi";
+  });
+
+  // Gestione cambio data
+  document.getElementById("date").addEventListener("change", () => {
+    const selectedDate = document.getElementById("date").value;
+    const [year, month, day] = selectedDate.split("-");
+    const birthdayBanner = document.getElementById("birthdayBanner");
+    if (day === "18" && month === "12") {
+      birthdayBanner.style.display = "block";
+    } else {
+      birthdayBanner.style.display = "none";
+    }
+    document.getElementById("formDateDesc")?.textContent = `Compila i dettagli per ${day}/${month}/${year}`;
+    renderList();
+  });
+
+  // Inizializza data a oggi e carica dati
+  document.getElementById("date").valueAsDate = new Date();
+  loadData();
+</script>
+
+</body>
+</html>
