@@ -39,14 +39,15 @@
       margin-bottom: 0.2rem;
     }
     .container {
-      display: flex;
-      gap: 1rem;
-      margin-top: 2rem;
-      align-items: flex-start;
-      flex-wrap: nowrap; /* impedisce il wrap a capo */
-      width: 100%;
-      box-sizing: border-box;
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    align-items: flex-start;
+    flex-wrap: wrap; /* CONSENTE il wrap a capo su schermi piccoli */
+    width: 100%;
+    box-sizing: border-box;
     }
+
     .container > .card:first-child {
       flex: 0 0 30%;
       max-width: 30%;
@@ -191,6 +192,25 @@
       background-color: #e63946; /* rosso acceso */
     }
 
+    @media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+  }
+
+  .container > .card {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+
+  #activeDaysContainer {
+    justify-content: flex-start;
+  }
+
+  .booking-card {
+    flex: 1 1 100%;
+  }
+}
+
     
   </style>
 </head>
@@ -330,6 +350,10 @@
 window.editEntry = editEntry;
 window.deleteEntry = deleteEntry;
 
+function closeEditModal() {
+  document.getElementById("editModal").style.display = "none";
+  editingId = null;
+}
 
   // Renderizza lista prenotazioni per data
   async function renderList() {
@@ -426,23 +450,24 @@ window.deleteEntry = deleteEntry;
 
   // Modifica prenotazione: carica dati nel form
   async function editEntry(id) {
-    const docRef = doc(db, "prenotazioni", id);
-    const docSnap = await getDoc(docRef);
-    if (!docSnap.exists()) return;
+  const docRef = doc(db, "prenotazioni", id);
+  const docSnap = await getDoc(docRef);
+  if (!docSnap.exists()) return;
 
-    editingId = id;
-    const entry = docSnap.data();
+  editingId = id;
+  const entry = docSnap.data();
 
-    document.getElementById("ownerName").value = entry.ownerName;
-    document.getElementById("numAdults").value = entry.numAdults;
-    document.getElementById("numChildren").value = entry.numChildren;
-    document.getElementById("timeSlot").value = entry.timeSlot;
-    document.getElementById("notes").value = entry.notes || "";
-    document.getElementById("date").value = entry.date;
-    document.getElementById("date").dispatchEvent(new Event("change"));
+  // Precompila il popup
+  document.getElementById("editOwnerName").value = entry.ownerName;
+  document.getElementById("editNumAdults").value = entry.numAdults;
+  document.getElementById("editNumChildren").value = entry.numChildren;
+  document.getElementById("editTimeSlot").value = entry.timeSlot;
+  document.getElementById("editNotes").value = entry.notes || "";
 
-    document.querySelector("#breakfastForm button[type=submit]").textContent = "Salva Modifica";
-  }
+  // Mostra il popup
+  document.getElementById("editModal").style.display = "flex";
+}
+
 
   // Gestione submit form: aggiungi o aggiorna
   document.getElementById("breakfastForm").addEventListener("submit", async function (e) {
@@ -534,8 +559,82 @@ window.deleteEntry = deleteEntry;
       });
     }
   });
+
+document.getElementById("editForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+
+  const ownerName = document.getElementById("editOwnerName").value.trim();
+  const numAdults = parseInt(document.getElementById("editNumAdults").value);
+  const numChildren = parseInt(document.getElementById("editNumChildren").value);
+  const timeSlot = document.getElementById("editTimeSlot").value;
+  const notes = document.getElementById("editNotes").value.trim();
+  const numBreakfasts = numAdults + numChildren;
+  const date = document.getElementById("date").value;
+
+  const all = await getData(date);
+  const currentBookings = all.filter(b => b.id !== editingId && b.timeSlot === timeSlot);
+  const totalPeopleInSlot = currentBookings.reduce((sum, b) => sum + b.numBreakfasts, 0);
+
+  if (totalPeopleInSlot + numBreakfasts > 15) {
+    alert(`Limite raggiunto: massimo 15 persone per la fascia ${timeSlot}.`);
+    return;
+  }
+
+  const entry = { date, ownerName, numAdults, numChildren, timeSlot, notes, numBreakfasts };
+
+  try {
+    await updateEntry(editingId, entry);
+    editingId = null;
+    closeEditModal();
+    await renderList();
+    await renderActiveDays();
+  } catch (error) {
+    alert("Errore nel salvataggio: " + error.message);
+    console.error(error);
+  }
+});
+
+
+
+
 </script>
 
+<div id="editModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:center;">
+  <div style="background:#fff; padding:1.5rem; border-radius:12px; width:90%; max-width:500px; box-shadow:0 5px 20px rgba(0,0,0,0.2); position:relative;">
+    <h2>Modifica Prenotazione</h2>
+    <form id="editForm">
+      <label>Ospite
+        <input type="text" id="editOwnerName" required />
+      </label>
+      <label>Adulti
+        <input type="number" id="editNumAdults" min="0" max="15" required />
+      </label>
+      <label>Bambini
+        <input type="number" id="editNumChildren" min="0" max="15" required />
+      </label>
+      <label>Fascia Oraria
+        <select id="editTimeSlot">
+          <option value="07:30">07:30</option>
+          <option value="08:00">08:00</option>
+          <option value="08:30">08:30</option>
+          <option value="09:00">09:00</option>
+          <option value="09:30">09:30</option>
+          <option value="10:00">10:00</option>
+          <option value="10:30">10:30</option>
+          <option value="11:00">11:00</option>
+          <option value="11:30">11:30</option>
+        </select>
+      </label>
+      <label>Note (opzionale)
+        <textarea id="editNotes"></textarea>
+      </label>
+      <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem;">
+        <button type="button" onclick="closeEditModal()" style="background:#ccc; color:#333;">Annulla</button>
+        <button type="submit" style="background: var(--accent); color: white;">Salva Modifica</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 
 
