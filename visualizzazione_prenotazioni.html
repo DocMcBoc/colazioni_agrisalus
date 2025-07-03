@@ -152,23 +152,23 @@
             <span>${totalBooked} ${prenotataText} / ${remaining} rimanenti</span>
           `;
 
-            bookings.forEach(b => {
-  const item = document.createElement("div");
-  item.className = "booking-details";
-  const noteText = b.notes || "";
-  item.innerHTML = `
-    <span>👤 ${b.numAdults}</span>
-    <span>👶 ${b.numChildren}</span>
-    <span>🍽️ ${b.numBreakfasts}</span>
-    <strong>${b.ownerName}</strong>
-    <br />
-    ${noteText ? `<small>${noteText}</small>` : ""}
-    <hr style="border:none; border-bottom: 1px solid #ddd; margin: 0.6rem 0;" />
-  `;
-  slotDiv.appendChild(item);
-});
-
-
+          bookings.forEach(b => {
+            const item = document.createElement("div");
+            item.className = "booking-details";
+            const noteText = b.notes || "";
+            const breadText = b.bread || "";
+            item.innerHTML = `
+              <span>👤 ${b.numAdults}</span>
+              <span>👶 ${b.numChildren}</span>
+              <span>🍽️ ${b.numBreakfasts}</span>
+              <strong>${b.ownerName}</strong>
+              <br />
+              ${noteText ? `<small>${noteText}</small><br />` : ""}
+              ${breadText ? `<small>🥖 ${breadText}</small>` : ""}
+              <hr style="border:none; border-bottom: 1px solid #ddd; margin: 0.6rem 0;" />
+            `;
+            slotDiv.appendChild(item);
+          });
 
           list.appendChild(slotDiv);
         }
