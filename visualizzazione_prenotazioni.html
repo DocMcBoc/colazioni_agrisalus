@@ -153,19 +153,20 @@
           `;
 
             bookings.forEach(b => {
-    const item = document.createElement("div");
-    item.className = "booking-details";
-    const noteText = (b.notes && b.notes.toLowerCase() !== "bianco") ? b.notes : "";
-    item.innerHTML = `
-      <span>👤 ${b.numAdults}</span>
-      <span>👶 ${b.numChildren}</span>
-      <span>🍽️ ${b.numBreakfasts}</span>
-      <strong>${b.ownerName}</strong>
-      <br />
-      ${noteText ? `<small>${noteText}</small>` : ""}
-    `;
-    slotDiv.appendChild(item);
-  });
+  const item = document.createElement("div");
+  item.className = "booking-details";
+  const noteText = (b.notes && b.notes.toLowerCase() !== "bianco") ? b.notes : "";
+  item.innerHTML = `
+    <span>👤 ${b.numAdults}</span>
+    <span>👶 ${b.numChildren}</span>
+    <span>🍽️ ${b.numBreakfasts}</span>
+    <strong>${b.ownerName}</strong>
+    <br />
+    ${noteText ? `<small>${noteText}</small>` : ""}
+    <hr style="border:none; border-bottom: 1px solid #ddd; margin: 0.6rem 0;" />
+  `;
+  slotDiv.appendChild(item);
+});
 
 
 
