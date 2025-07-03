@@ -155,7 +155,7 @@
             bookings.forEach(b => {
   const item = document.createElement("div");
   item.className = "booking-details";
-  const noteText = (b.notes && b.notes.toLowerCase() !== "bianco") ? b.notes : "";
+  const noteText = b.notes || "";
   item.innerHTML = `
     <span>👤 ${b.numAdults}</span>
     <span>👶 ${b.numChildren}</span>
