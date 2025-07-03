@@ -330,202 +330,149 @@
   </div>
 
   <script>
-    const SHEET_URL = "https://script.google.com/macros/s/AKfycbxkS94PoUv-2_sKzTdc2eYgumhqHYBMhG65SMyVyXKT47ef_yGWD315vvmtRr1LtHGE/exec"
-      "https://script.google.com/macros/s/AKfycbwcurABKsq7rzY3lnBvsL0enJb7JNMTOjqNcd5wJ4YoE8X0_-ufQ1xqYM8pSCNJZ7xV/exec";
+    const SHEET_URL = "https://script.google.com/macros/s/AKfycbwcurABKsq7rzY3lnBvsL0enJb7JNMTOjqNcd5wJ4YoE8X0_-ufQ1xqYM8pSCNJZ7xV/exec";
 
-    // Recupera dati da Google Sheet
-    async function getData() {
-      try {
-        const response = await fetch(SHEET_URL);
-        const data = await response.json();
-        return Array.isArray(data) ? data : [];
-      } catch (e) {
-        console.error("Errore caricamento dati:", e);
-        return [];
-      }
-    }
+async function getData() {
+  const response = await fetch(SHEET_URL);
+  const data = await response.json();
+  return Array.isArray(data) ? data : [];
+}
 
-    async function renderList() {
-      const list = document.getElementById("breakfastList");
-      const date = document.getElementById("date").value;
-      const allData = await getData();
-      const data = allData.filter((b) => b.date === date);
-      const summary = document.getElementById("summary");
-      const totalBreakfasts = data.reduce((s, b) => s + parseInt(b.numBreakfasts), 0);
-      summary.textContent = `Panoramica per ${date.split("-").reverse().join(
-        "/"
-      )}. Colazioni Totali: ${totalBreakfasts}`;
-      list.innerHTML = "";
+async function renderList() {
+  const list = document.getElementById("breakfastList");
+  const date = document.getElementById("date").value;
+  const allData = await getData();
+  const data = allData.filter(b => b.date === date);
+  const summary = document.getElementById("summary");
+  summary.textContent = `Panoramica per ${date.split("-").reverse().join("/")}. Colazioni Totali: ${data.reduce((s,b) => s + parseInt(b.numBreakfasts), 0)}`;
+  list.innerHTML = "";
 
-      const slots = ["07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30"];
-      const maxPerSlot = 15;
+  const slots = ["07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30"];
+  const maxPerSlot = 15;
 
-      slots.forEach((slot, i) => {
-        const bookings = data.filter((b) => b.timeSlot === slot);
-        if (bookings.length > 0) {
-          const totalBooked = bookings.reduce((sum, b) => sum + parseInt(b.numBreakfasts), 0);
-          const remaining = maxPerSlot - totalBooked;
-          const prenotataText = totalBooked === 1 ? "prenotata" : "prenotate";
-          let nextSlot = slots[i + 1] || slot;
+  slots.forEach((slot, i) => {
+    const bookings = data.filter(b => b.timeSlot === slot);
+    if (bookings.length > 0) {
+      const totalBooked = bookings.reduce((sum, b) => sum + parseInt(b.numBreakfasts), 0);
+      const remaining = maxPerSlot - totalBooked;
+      const nextSlot = slots[i + 1] || slot;
+      const slotDiv = document.createElement("div");
+      slotDiv.className = "booking-card";
+      slotDiv.innerHTML = `
+        <h3>${slot} - ${nextSlot}</h3>
+        <span>${totalBooked} ${totalBooked === 1 ? "prenotata" : "prenotate"} / ${remaining} rimanenti</span>
+        <div class="progress-bar" style="background-color: ${remaining === 0 ? 'red' : 'green'}; height: 12px; border-radius: 6px; margin-top: 6px; width: ${(totalBooked / maxPerSlot) * 100}%; transition: width 0.3s ease;"></div>
+      `;
+      const bookingsContainer = document.createElement("div");
+      bookingsContainer.style.marginTop = "1rem";
+      bookingsContainer.style.display = "flex";
+      bookingsContainer.style.flexDirection = "column";
+      bookingsContainer.style.gap = "0.5rem";
 
-          const slotDiv = document.createElement("div");
-          slotDiv.className = "booking-card";
-          slotDiv.style.width = "48%";
-          slotDiv.style.backgroundColor = "#fff"; // bianco
-          slotDiv.style.border = "2px solid #fffaf0"; // bordo giallino
-          slotDiv.style.padding = "1rem";
-          slotDiv.style.borderRadius = "12px";
-          slotDiv.style.boxSizing = "border-box";
-
-          // Header fascia oraria e info
-          const headerHTML = `
-            <h3>${slot} - ${nextSlot}</h3>
-            <span>${totalBooked} ${prenotataText} / ${remaining} rimanenti</span>
-            <div class="progress-bar" style="
-              background-color: ${remaining === 0 ? "red" : "green"};
-              height: 12px;
-              border-radius: 6px;
-              margin-top: 6px;
-              width: ${(totalBooked / maxPerSlot) * 100}%;
-              transition: width 0.3s ease;
-            "></div>
-          `;
-
-          slotDiv.innerHTML = headerHTML;
-
-          // Container per sotto-schede prenotazioni
-          const bookingsContainer = document.createElement("div");
-          bookingsContainer.style.marginTop = "1rem";
-          bookingsContainer.style.display = "flex";
-          bookingsContainer.style.flexDirection = "column";
-          bookingsContainer.style.gap = "0.5rem";
-
-          bookings.forEach((b) => {
-            const subCard = document.createElement("div");
-            subCard.style.backgroundColor = "#fffaf0"; // giallino app
-            subCard.style.padding = "0.6rem 1rem";
-            subCard.style.borderRadius = "8px";
-            subCard.style.boxShadow = "inset 0 0 5px rgba(0,0,0,0.05)";
-            subCard.innerHTML = `
-              <div style="display: flex; justify-content: space-between; align-items: center; font-weight: bold;">
-                ${b.ownerName}
-              </div>
-              <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.3rem; font-size: 0.95rem;">
-                <span>👤 ${b.numAdults}</span>
-                <span>👶 ${b.numChildren}</span>
-                <span>🍽️ ${b.numBreakfasts}</span>
-              </div>
-            `;
-            bookingsContainer.appendChild(subCard);
-          });
-
-          slotDiv.appendChild(bookingsContainer);
-          list.appendChild(slotDiv);
-        }
+      bookings.forEach(b => {
+        const subCard = document.createElement("div");
+        subCard.style.backgroundColor = "#fffaf0";
+        subCard.style.padding = "0.6rem 1rem";
+        subCard.style.borderRadius = "8px";
+        subCard.style.boxShadow = "inset 0 0 5px rgba(0,0,0,0.05)";
+        subCard.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; font-weight: bold;">
+            ${b.ownerName}
+          </div>
+          <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.3rem; font-size: 0.95rem;">
+            <span>👤 ${b.numAdults}</span>
+            <span>👶 ${b.numChildren}</span>
+            <span>🍽️ ${b.numBreakfasts}</span>
+          </div>
+        `;
+        bookingsContainer.appendChild(subCard);
       });
+
+      slotDiv.appendChild(bookingsContainer);
+      list.appendChild(slotDiv);
     }
+  });
+}
 
-    async function renderActiveDays() {
-      const container = document.getElementById("activeDaysContainer");
-      const all = await getData();
-      const uniqueDates = [...new Set(all.map((b) => b.date))].sort();
-      const currentDate = document.getElementById("date").value;
-
-      container.innerHTML = "";
-      uniqueDates.forEach((date) => {
-        const btn = document.createElement("button");
-        const [y, m, d] = date.split("-");
-        btn.textContent = `${parseInt(d)} ${new Date(date).toLocaleString("it-IT", {
-          month: "short",
-          year: "numeric",
-        })}`;
-        if (date === currentDate) btn.classList.add("selected");
-        btn.onclick = () => {
-          document.getElementById("date").value = date;
-          document.getElementById("date").dispatchEvent(new Event("change"));
-        };
-        container.appendChild(btn);
-      });
-    }
-
-    document.getElementById("breakfastForm").addEventListener("submit", async function (e) {
-      e.preventDefault();
-
-      const date = document.getElementById("date").value;
-      const ownerName = document.getElementById("ownerName").value.trim();
-      const numAdults = parseInt(document.getElementById("numAdults").value);
-      const numChildren = parseInt(document.getElementById("numChildren").value);
-      const timeSlot = document.getElementById("timeSlot").value;
-      const notes = document.getElementById("notes").value.trim();
-      const numBreakfasts = numAdults + numChildren;
-
-      if (!ownerName) {
-        alert("Inserisci il nome dell'ospite.");
-        return;
-      }
-      if (numBreakfasts === 0) {
-        alert("Inserisci almeno un adulto o un bambino.");
-        return;
-      }
-
-      const all = await getData();
-      const currentBookings = all.filter((b) => b.date === date && b.timeSlot === timeSlot);
-      const totalPeopleInSlot = currentBookings.reduce((sum, b) => sum + parseInt(b.numBreakfasts), 0);
-
-      if (totalPeopleInSlot + numBreakfasts > 15) {
-        alert(`Limite raggiunto: massimo 15 persone per la fascia ${timeSlot}.`);
-        return;
-      }
-
-      const newEntry = {
-        id: Date.now(),
-        date,
-        ownerName,
-        numAdults,
-        numChildren,
-        timeSlot,
-        notes,
-        numBreakfasts,
-      };
-
-      // POST su Google Sheet
-      try {
-        await fetch(SHEET_URL, {
-          method: "POST",
-          mode: "no-cors", // Google Apps Script non risponde con CORS, perciò no-cors
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(newEntry),
-        });
-      } catch (err) {
-        // no-cors non consente di leggere risposta, quindi errore probabile
-        // ma il POST potrebbe essere andato a buon fine
-        console.warn("Possibile problema nella POST, ma non possiamo verificare la risposta.", err);
-      }
-
-      this.reset();
-      renderList();
-      renderActiveDays();
-    });
-
-    document.getElementById("date").addEventListener("change", () => {
-      const selectedDate = document.getElementById("date").value;
-      const [year, month, day] = selectedDate.split("-");
-      const birthdayBanner = document.getElementById("birthdayBanner");
-
-      birthdayBanner.style.display = day === "18" && month === "12" ? "block" : "none";
-      document.getElementById("formDateDesc").textContent = `Compila i dettagli per ${day}/${month}/${year}`;
-
-      renderList();
-      renderActiveDays();
-    });
-
-    window.addEventListener("load", () => {
-      const today = new Date().toISOString().slice(0, 10);
-      document.getElementById("date").value = today;
+async function renderActiveDays() {
+  const container = document.getElementById("activeDaysContainer");
+  const all = await getData();
+  const uniqueDates = [...new Set(all.map(b => b.date))].sort();
+  const currentDate = document.getElementById("date").value;
+  container.innerHTML = "";
+  uniqueDates.forEach(date => {
+    const btn = document.createElement("button");
+    const [y, m, d] = date.split("-");
+    btn.textContent = `${parseInt(d)} ${new Date(date).toLocaleString("it-IT", { month: "short", year: "numeric" })}`;
+    if (date === currentDate) btn.classList.add("selected");
+    btn.onclick = () => {
+      document.getElementById("date").value = date;
       document.getElementById("date").dispatchEvent(new Event("change"));
-    });
+    };
+    container.appendChild(btn);
+  });
+}
+
+document.getElementById("breakfastForm").addEventListener("submit", async function (e) {
+  e.preventDefault();
+  const date = document.getElementById("date").value;
+  const ownerName = document.getElementById("ownerName").value.trim();
+  const numAdults = parseInt(document.getElementById("numAdults").value);
+  const numChildren = parseInt(document.getElementById("numChildren").value);
+  const timeSlot = document.getElementById("timeSlot").value;
+  const notes = document.getElementById("notes").value.trim();
+  const numBreakfasts = numAdults + numChildren;
+
+  const all = await getData();
+  const currentBookings = all.filter(b => b.date === date && b.timeSlot === timeSlot);
+  const totalPeopleInSlot = currentBookings.reduce((sum, b) => sum + parseInt(b.numBreakfasts), 0);
+
+  if (totalPeopleInSlot + numBreakfasts > 15) {
+    alert(`Limite raggiunto: massimo 15 persone per la fascia ${timeSlot}.`);
+    return;
+  }
+
+  const newEntry = {
+    id: Date.now(),
+    date,
+    ownerName,
+    numAdults,
+    numChildren,
+    timeSlot,
+    notes,
+    numBreakfasts
+  };
+
+  // POST con mode no-cors (non aspettiamo risposta)
+  fetch(SHEET_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(newEntry)
+  }).catch(() => alert("Errore di rete"));
+
+  // Reset form e aggiorna lista
+  this.reset();
+  renderList();
+  renderActiveDays();
+});
+
+document.getElementById("date").addEventListener("change", () => {
+  const selectedDate = document.getElementById("date").value;
+  const [year, month, day] = selectedDate.split("-");
+  const birthdayBanner = document.getElementById("birthdayBanner");
+  birthdayBanner.style.display = (day === "18" && month === "12") ? "block" : "none";
+  document.getElementById("formDateDesc").textContent = `Compila i dettagli per ${day}/${month}/${year}`;
+  renderList();
+  renderActiveDays();
+});
+
+window.addEventListener("load", () => {
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById("date").value = today;
+  document.getElementById("date").dispatchEvent(new Event("change"));
+});
+
   </script>
 </body>
 </html>
