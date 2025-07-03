@@ -271,13 +271,9 @@
     </div>
   </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-
 <script type="module">
-  // Importa Firebase (modular SDK)
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyA6Hu72qf0jJOolOJNEn00I5cd5XAYY9KM",
@@ -288,48 +284,51 @@
     appId: "1:194863060744:web:3b7f3ba3b5865e6bdcbebd"
   };
 
-  // Inizializza Firebase
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
+  const bookingsCol = collection(db, "prenotazioni");
 
-  // Collezione Firestore dove salvare le prenotazioni
-  const prenotazioniCol = collection(db, "prenotazioni");
+  let editingId = null;
 
-  let editingId = null; // Id documento in Firestore se stiamo modificando
-
-  // Funzione per caricare dati da Firestore filtrati per data
+  // Ottieni prenotazioni per una data
   async function getData(date) {
-    const q = query(prenotazioniCol, where("date", "==", date));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const q = query(bookingsCol, where("date", "==", date));
+    const snapshot = await getDocs(q);
+    const results = [];
+    snapshot.forEach(docSnap => results.push({ id: docSnap.id, ...docSnap.data() }));
+    return results;
   }
 
-  // Funzione per caricare tutte le prenotazioni (per giorni attivi)
+  // Ottieni tutte le prenotazioni (senza filtro)
   async function getAllData() {
-    const snapshot = await getDocs(prenotazioniCol);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const snapshot = await getDocs(bookingsCol);
+    const results = [];
+    snapshot.forEach(docSnap => results.push({ id: docSnap.id, ...docSnap.data() }));
+    return results;
   }
 
-  // Funzione per salvare una nuova prenotazione
-  async function addEntry(entry) {
-    await addDoc(prenotazioniCol, entry);
+  // Aggiungi prenotazione
+  async function addEntry(data) {
+    await addDoc(bookingsCol, data);
   }
 
-  // Funzione per aggiornare una prenotazione esistente
-  async function updateEntry(id, entry) {
+  // Aggiorna prenotazione
+  async function updateEntry(id, data) {
     const docRef = doc(db, "prenotazioni", id);
-    await updateDoc(docRef, entry);
+    await updateDoc(docRef, data);
   }
 
-  // Funzione per eliminare una prenotazione
+  // Cancella prenotazione
   async function deleteEntry(id) {
-    const docRef = doc(db, "prenotazioni", id);
-    await deleteDoc(docRef);
-    renderList();
-    renderActiveDays();
+    if (confirm("Sei sicuro di voler eliminare questa prenotazione?")) {
+      const docRef = doc(db, "prenotazioni", id);
+      await deleteDoc(docRef);
+      await renderList();
+      await renderActiveDays();
+    }
   }
 
-  // Funzione per renderizzare la lista prenotazioni per data selezionata
+  // Renderizza lista prenotazioni per data
   async function renderList() {
     const list = document.getElementById("breakfastList");
     const date = document.getElementById("date").value;
@@ -401,7 +400,7 @@
     });
   }
 
-  // Funzione per renderizzare i giorni con prenotazioni attive
+  // Render giorni con prenotazioni
   async function renderActiveDays() {
     const container = document.getElementById("activeDaysContainer");
     const all = await getAllData();
@@ -422,14 +421,14 @@
     });
   }
 
-  // Funzione per modificare una prenotazione: carica i dati nel form
+  // Modifica prenotazione: carica dati nel form
   async function editEntry(id) {
     const docRef = doc(db, "prenotazioni", id);
-    const docSnap = await getDocs(docRef);
-    const allData = await getAllData();
-    const entry = allData.find(b => b.id === id);
-    if (!entry) return;
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return;
+
     editingId = id;
+    const entry = docSnap.data();
 
     document.getElementById("ownerName").value = entry.ownerName;
     document.getElementById("numAdults").value = entry.numAdults;
@@ -442,7 +441,7 @@
     document.querySelector("#breakfastForm button[type=submit]").textContent = "Salva Modifica";
   }
 
-  // Form submit: aggiunge o aggiorna prenotazione
+  // Gestione submit form: aggiungi o aggiorna
   document.getElementById("breakfastForm").addEventListener("submit", async function (e) {
     e.preventDefault();
 
@@ -460,7 +459,7 @@
     }
 
     const all = await getData(date);
-    const currentBookings = all.filter(b => b.id !== editingId);
+    const currentBookings = all.filter(b => b.id !== editingId && b.timeSlot === timeSlot);
     const totalPeopleInSlot = currentBookings.reduce((sum, b) => sum + b.numBreakfasts, 0);
     if (totalPeopleInSlot + numBreakfasts > 15) {
       alert(`Limite raggiunto: massimo 15 persone per la fascia ${timeSlot}.`);
@@ -486,7 +485,7 @@
     }
   });
 
-  // Aggiorna lista e giorni attivi al cambio data
+  // Cambia lista e giorni attivi al cambio data
   document.getElementById("date").addEventListener("change", async () => {
     const selectedDate = document.getElementById("date").value;
     const [year, month, day] = selectedDate.split("-");
@@ -497,14 +496,14 @@
     await renderActiveDays();
   });
 
-  // Inizializza data oggi e carica dati
+  // Inizializza oggi e carica dati
   window.addEventListener("load", () => {
     const today = new Date().toISOString().slice(0, 10);
     document.getElementById("date").value = today;
     document.getElementById("date").dispatchEvent(new Event("change"));
   });
 
-  // flatpickr configurazione come nel tuo originale
+  // flatpickr configurazione (rimane identica)
   flatpickr("#date", {
     dateFormat: "d-m-Y",
     defaultDate: new Date(),
@@ -533,6 +532,7 @@
     }
   });
 </script>
+
 
 
 
