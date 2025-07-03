@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Prenotazioni Colazione</title>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js"></script>
 
   <style>
     :root {
@@ -66,10 +66,7 @@
       margin-top: 1rem;
       font-weight: 600;
     }
-    input,
-    select,
-    textarea,
-    button {
+    input, select, textarea, button {
       width: 100%;
       padding: 0.5rem;
       border-radius: 6px;
@@ -85,28 +82,26 @@
       font-weight: bold;
       border: none;
       cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-    button:hover {
-      background-color: #82c496;
     }
     #breakfastList {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-    .booking-card {
-      flex: 0 0 48%; /* larghezza per stare due per riga */
-      box-sizing: border-box;
-      background: #fff;
-      border: 1px solid #f0e9dc;
-      border-radius: 12px;
-      padding: 1rem;
-      margin-bottom: 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.booking-card {
+  flex: 0 0 48%; /* larghezza per stare due per riga */
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid #f0e9dc;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
     .booking-card h3 {
       margin: 0 0 0.5rem 0;
       font-weight: 700;
@@ -125,9 +120,9 @@
     }
     .header-bar {
       display: flex;
-      flex-direction: row;
+      flex-direction: column;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       background-color: #fff;
       padding: 1rem 1.5rem;
       border-radius: 8px;
@@ -158,7 +153,6 @@
       display: inline-flex;
       align-items: center;
       white-space: nowrap;
-      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
     }
     #activeDaysContainer button.selected {
       background-color: var(--accent);
@@ -183,7 +177,7 @@
       background: #d5e7d5; /* verde chiaro */
       border-radius: 7px;
       overflow: hidden;
-      box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.1);
+      box-shadow: inset 0 0 3px rgba(0,0,0,0.1);
     }
     .progress-bar.full {
       background: #f8d7da; /* rosso chiaro */
@@ -196,51 +190,29 @@
     .progress-bar.full .progress-fill {
       background-color: #e63946; /* rosso acceso */
     }
+
+    
   </style>
 </head>
 <body>
-  <div
-    id="birthdayBanner"
-    style="display: none; font-size: 1.5rem; color: var(--accent); text-align: center; margin-bottom: 1rem;"
-  >
+  <div id="birthdayBanner" style="display: none; font-size: 1.5rem; color: var(--accent); text-align: center; margin-bottom: 1rem;">
     🎉 Buon compleanno Silvia! 🎉
   </div>
 
-  <div class="header-bar">
-    <h1>🍴 Prenotazioni colazione</h1>
-    <label
-      for="date"
-      style="
-        background-color: #fffaf0;
-        color: #555;
-        padding: 0.3rem 0.6rem;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 1rem;
-        display: flex;
-        align-items: center;
-        gap: 0.3rem;
-        cursor: pointer;
-        user-select: none;
-      "
-    >
-      <img
-        src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png"
-        alt="calendario"
-        style="width: 18px; height: 18px;"
-      />
-      <input
-        type="date"
-        id="date"
-        style="border: none; background: transparent; color: #555; font-size: 1rem; cursor: pointer; padding: 0; margin: 0; width: auto;"
-      />
+  <div class="header-bar" style="flex-direction: row; align-items: center; justify-content: space-between;">
+    <h1 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">🍴 Prenotazioni colazione</h1>
+    <label for="date" style="background-color: #fffaf0; color: #555; padding: 0.3rem 0.6rem; border-radius: 6px; font-weight: 600; font-size: 1rem; display: flex; align-items: center; gap: 0.3rem; cursor: pointer; user-select: none;">
+      <img src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png" alt="calendario" style="width: 18px; height: 18px;" />
+      <input type="date" id="date" style="border: none; background: transparent; color: #555; font-size: 1rem; cursor: pointer; padding: 0; margin: 0; width: auto;" />
     </label>
   </div>
 
   <div class="active-days-card">
     <h2>Giorni con Prenotazioni Attive</h2>
     <p class="muted">Seleziona un giorno per visualizzare o modificare le prenotazioni.</p>
-    <div id="activeDaysContainer"></div>
+    <div id="activeDaysContainer" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+      <!-- Pulsanti generati dinamicamente -->
+    </div>
   </div>
 
   <div class="container">
@@ -248,58 +220,29 @@
       <h2>Aggiungi Nuova Colazione</h2>
       <p class="muted" id="formDateDesc"></p>
       <form id="breakfastForm">
-        <label>
-          Ospite
+        <label>Ospite
           <input type="text" id="ownerName" placeholder="Filemazio" required />
         </label>
 
-        <div
-          style="
-            display: flex;
-            gap: 1rem;
-            margin-top: 1rem;
-            flex-wrap: nowrap;
-          "
-        >
+        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
           <div style="flex: 1; display: flex; flex-direction: column; align-items: flex-start;">
-            <label
-              style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;"
-            >
+            <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
               <span>👤</span>
               <span>Adulti</span>
             </label>
-            <input
-              type="number"
-              id="numAdults"
-              min="0"
-              max="15"
-              value="1"
-              required
-              style="width: 100%; margin-top: 0.3rem;"
-            />
+            <input type="number" id="numAdults" min="0" max="15" value="1" required style="width: 100%; margin-top: 0.3rem;" />
           </div>
 
           <div style="flex: 1; display: flex; flex-direction: column; align-items: flex-start;">
-            <label
-              style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;"
-            >
+            <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
               <span>👶</span>
               <span>Bambini</span>
             </label>
-            <input
-              type="number"
-              id="numChildren"
-              min="0"
-              max="15"
-              value="0"
-              required
-              style="width: 100%; margin-top: 0.3rem;"
-            />
+            <input type="number" id="numChildren" min="0" max="15" value="0" required style="width: 100%; margin-top: 0.3rem;" />
           </div>
         </div>
 
-        <label style="margin-top: 1rem;">
-          Fascia Oraria
+        <label style="margin-top: 1rem;">Fascia Oraria
           <select id="timeSlot">
             <option value="07:30">07:30</option>
             <option value="08:00">08:00</option>
@@ -313,8 +256,7 @@
           </select>
         </label>
 
-        <label style="margin-top: 1rem;">
-          Note (opzionale)
+        <label style="margin-top: 1rem;">Note (opzionale)
           <textarea id="notes"></textarea>
         </label>
 
@@ -329,150 +271,270 @@
     </div>
   </div>
 
-  <script>
-    const SHEET_URL = "https://script.google.com/macros/s/AKfycbwcurABKsq7rzY3lnBvsL0enJb7JNMTOjqNcd5wJ4YoE8X0_-ufQ1xqYM8pSCNJZ7xV/exec";
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
-async function getData() {
-  const response = await fetch(SHEET_URL);
-  const data = await response.json();
-  return Array.isArray(data) ? data : [];
-}
+<script type="module">
+  // Importa Firebase (modular SDK)
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 
-async function renderList() {
-  const list = document.getElementById("breakfastList");
-  const date = document.getElementById("date").value;
-  const allData = await getData();
-  const data = allData.filter(b => b.date === date);
-  const summary = document.getElementById("summary");
-  summary.textContent = `Panoramica per ${date.split("-").reverse().join("/")}. Colazioni Totali: ${data.reduce((s,b) => s + parseInt(b.numBreakfasts), 0)}`;
-  list.innerHTML = "";
-
-  const slots = ["07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30"];
-  const maxPerSlot = 15;
-
-  slots.forEach((slot, i) => {
-    const bookings = data.filter(b => b.timeSlot === slot);
-    if (bookings.length > 0) {
-      const totalBooked = bookings.reduce((sum, b) => sum + parseInt(b.numBreakfasts), 0);
-      const remaining = maxPerSlot - totalBooked;
-      const nextSlot = slots[i + 1] || slot;
-      const slotDiv = document.createElement("div");
-      slotDiv.className = "booking-card";
-      slotDiv.innerHTML = `
-        <h3>${slot} - ${nextSlot}</h3>
-        <span>${totalBooked} ${totalBooked === 1 ? "prenotata" : "prenotate"} / ${remaining} rimanenti</span>
-        <div class="progress-bar" style="background-color: ${remaining === 0 ? 'red' : 'green'}; height: 12px; border-radius: 6px; margin-top: 6px; width: ${(totalBooked / maxPerSlot) * 100}%; transition: width 0.3s ease;"></div>
-      `;
-      const bookingsContainer = document.createElement("div");
-      bookingsContainer.style.marginTop = "1rem";
-      bookingsContainer.style.display = "flex";
-      bookingsContainer.style.flexDirection = "column";
-      bookingsContainer.style.gap = "0.5rem";
-
-      bookings.forEach(b => {
-        const subCard = document.createElement("div");
-        subCard.style.backgroundColor = "#fffaf0";
-        subCard.style.padding = "0.6rem 1rem";
-        subCard.style.borderRadius = "8px";
-        subCard.style.boxShadow = "inset 0 0 5px rgba(0,0,0,0.05)";
-        subCard.innerHTML = `
-          <div style="display: flex; justify-content: space-between; align-items: center; font-weight: bold;">
-            ${b.ownerName}
-          </div>
-          <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.3rem; font-size: 0.95rem;">
-            <span>👤 ${b.numAdults}</span>
-            <span>👶 ${b.numChildren}</span>
-            <span>🍽️ ${b.numBreakfasts}</span>
-          </div>
-        `;
-        bookingsContainer.appendChild(subCard);
-      });
-
-      slotDiv.appendChild(bookingsContainer);
-      list.appendChild(slotDiv);
-    }
-  });
-}
-
-async function renderActiveDays() {
-  const container = document.getElementById("activeDaysContainer");
-  const all = await getData();
-  const uniqueDates = [...new Set(all.map(b => b.date))].sort();
-  const currentDate = document.getElementById("date").value;
-  container.innerHTML = "";
-  uniqueDates.forEach(date => {
-    const btn = document.createElement("button");
-    const [y, m, d] = date.split("-");
-    btn.textContent = `${parseInt(d)} ${new Date(date).toLocaleString("it-IT", { month: "short", year: "numeric" })}`;
-    if (date === currentDate) btn.classList.add("selected");
-    btn.onclick = () => {
-      document.getElementById("date").value = date;
-      document.getElementById("date").dispatchEvent(new Event("change"));
-    };
-    container.appendChild(btn);
-  });
-}
-
-document.getElementById("breakfastForm").addEventListener("submit", async function (e) {
-  e.preventDefault();
-  const date = document.getElementById("date").value;
-  const ownerName = document.getElementById("ownerName").value.trim();
-  const numAdults = parseInt(document.getElementById("numAdults").value);
-  const numChildren = parseInt(document.getElementById("numChildren").value);
-  const timeSlot = document.getElementById("timeSlot").value;
-  const notes = document.getElementById("notes").value.trim();
-  const numBreakfasts = numAdults + numChildren;
-
-  const all = await getData();
-  const currentBookings = all.filter(b => b.date === date && b.timeSlot === timeSlot);
-  const totalPeopleInSlot = currentBookings.reduce((sum, b) => sum + parseInt(b.numBreakfasts), 0);
-
-  if (totalPeopleInSlot + numBreakfasts > 15) {
-    alert(`Limite raggiunto: massimo 15 persone per la fascia ${timeSlot}.`);
-    return;
-  }
-
-  const newEntry = {
-    id: Date.now(),
-    date,
-    ownerName,
-    numAdults,
-    numChildren,
-    timeSlot,
-    notes,
-    numBreakfasts
+  const firebaseConfig = {
+    apiKey: "AIzaSyA6Hu72qf0jJOolOJNEn00I5cd5XAYY9KM",
+    authDomain: "colazioni-agrisalus.firebaseapp.com",
+    projectId: "colazioni-agrisalus",
+    storageBucket: "colazioni-agrisalus.firebasestorage.app",
+    messagingSenderId: "194863060744",
+    appId: "1:194863060744:web:3b7f3ba3b5865e6bdcbebd"
   };
 
-  // POST con mode no-cors (non aspettiamo risposta)
-  fetch(SHEET_URL, {
-    method: "POST",
-    mode: "no-cors",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(newEntry)
-  }).catch(() => alert("Errore di rete"));
+  // Inizializza Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-  // Reset form e aggiorna lista
-  this.reset();
-  renderList();
-  renderActiveDays();
-});
+  // Collezione Firestore dove salvare le prenotazioni
+  const prenotazioniCol = collection(db, "prenotazioni");
 
-document.getElementById("date").addEventListener("change", () => {
-  const selectedDate = document.getElementById("date").value;
-  const [year, month, day] = selectedDate.split("-");
-  const birthdayBanner = document.getElementById("birthdayBanner");
-  birthdayBanner.style.display = (day === "18" && month === "12") ? "block" : "none";
-  document.getElementById("formDateDesc").textContent = `Compila i dettagli per ${day}/${month}/${year}`;
-  renderList();
-  renderActiveDays();
-});
+  let editingId = null; // Id documento in Firestore se stiamo modificando
 
-window.addEventListener("load", () => {
-  const today = new Date().toISOString().slice(0, 10);
-  document.getElementById("date").value = today;
-  document.getElementById("date").dispatchEvent(new Event("change"));
-});
+  // Funzione per caricare dati da Firestore filtrati per data
+  async function getData(date) {
+    const q = query(prenotazioniCol, where("date", "==", date));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
 
-  </script>
+  // Funzione per caricare tutte le prenotazioni (per giorni attivi)
+  async function getAllData() {
+    const snapshot = await getDocs(prenotazioniCol);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+
+  // Funzione per salvare una nuova prenotazione
+  async function addEntry(entry) {
+    await addDoc(prenotazioniCol, entry);
+  }
+
+  // Funzione per aggiornare una prenotazione esistente
+  async function updateEntry(id, entry) {
+    const docRef = doc(db, "prenotazioni", id);
+    await updateDoc(docRef, entry);
+  }
+
+  // Funzione per eliminare una prenotazione
+  async function deleteEntry(id) {
+    const docRef = doc(db, "prenotazioni", id);
+    await deleteDoc(docRef);
+    renderList();
+    renderActiveDays();
+  }
+
+  // Funzione per renderizzare la lista prenotazioni per data selezionata
+  async function renderList() {
+    const list = document.getElementById("breakfastList");
+    const date = document.getElementById("date").value;
+    const data = await getData(date);
+    const summary = document.getElementById("summary");
+
+    const totalBreakfasts = data.reduce((s, b) => s + b.numBreakfasts, 0);
+    summary.textContent = `Panoramica per ${date.split("-").reverse().join("/")}. Colazioni Totali: ${totalBreakfasts}`;
+
+    list.innerHTML = "";
+    const slots = ["07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30"];
+    const maxPerSlot = 15;
+
+    slots.forEach((slot, i) => {
+      const bookings = data.filter(b => b.timeSlot === slot);
+      if (bookings.length > 0) {
+        const totalBooked = bookings.reduce((sum, b) => sum + b.numBreakfasts, 0);
+        const remaining = maxPerSlot - totalBooked;
+        const prenotataText = totalBooked === 1 ? "prenotata" : "prenotate";
+        let nextSlot = slots[i + 1] || slot;
+
+        const slotDiv = document.createElement("div");
+        slotDiv.className = "booking-card";
+
+        slotDiv.innerHTML = `
+          <h3>${slot} - ${nextSlot}</h3>
+          <span>${totalBooked} ${prenotataText} / ${remaining} rimanenti</span>
+          <div class="progress-bar" style="
+            background-color: ${remaining === 0 ? 'red' : 'green'};
+            height: 12px;
+            border-radius: 6px;
+            margin-top: 6px;
+            width: ${(totalBooked / maxPerSlot) * 100}%;
+            transition: width 0.3s ease;"></div>
+        `;
+
+        const bookingsContainer = document.createElement("div");
+        bookingsContainer.style.marginTop = "1rem";
+        bookingsContainer.style.display = "flex";
+        bookingsContainer.style.flexDirection = "column";
+        bookingsContainer.style.gap = "0.5rem";
+
+        bookings.forEach(b => {
+          const subCard = document.createElement("div");
+          subCard.style.backgroundColor = "#fffaf0";
+          subCard.style.padding = "0.6rem 1rem";
+          subCard.style.borderRadius = "8px";
+          subCard.style.boxShadow = "inset 0 0 5px rgba(0,0,0,0.05)";
+          subCard.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; font-weight: bold;">
+              ${b.ownerName}
+              <div class="actions" style="display: flex; gap: 0.5rem;">
+                <span class="delete-button" onclick="editEntry('${b.id}')" title="Modifica">✏️</span>
+                <span class="delete-button" onclick="deleteEntry('${b.id}')" title="Elimina">🗑️</span>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.3rem; font-size: 0.95rem;">
+              <span>👤 ${b.numAdults}</span>
+              <span>👶 ${b.numChildren}</span>
+              <span>🍽️ ${b.numBreakfasts}</span>
+            </div>
+          `;
+          bookingsContainer.appendChild(subCard);
+        });
+
+        slotDiv.appendChild(bookingsContainer);
+        list.appendChild(slotDiv);
+      }
+    });
+  }
+
+  // Funzione per renderizzare i giorni con prenotazioni attive
+  async function renderActiveDays() {
+    const container = document.getElementById("activeDaysContainer");
+    const all = await getAllData();
+    const uniqueDates = [...new Set(all.map(b => b.date))].sort();
+    const currentDate = document.getElementById("date").value;
+
+    container.innerHTML = "";
+    uniqueDates.forEach(date => {
+      const btn = document.createElement("button");
+      const [y, m, d] = date.split("-");
+      btn.textContent = `${parseInt(d)} ${new Date(date).toLocaleString("it-IT", { month: "short", year: "numeric" })}`;
+      if (date === currentDate) btn.classList.add("selected");
+      btn.onclick = () => {
+        document.getElementById("date").value = date;
+        document.getElementById("date").dispatchEvent(new Event("change"));
+      };
+      container.appendChild(btn);
+    });
+  }
+
+  // Funzione per modificare una prenotazione: carica i dati nel form
+  async function editEntry(id) {
+    const docRef = doc(db, "prenotazioni", id);
+    const docSnap = await getDocs(docRef);
+    const allData = await getAllData();
+    const entry = allData.find(b => b.id === id);
+    if (!entry) return;
+    editingId = id;
+
+    document.getElementById("ownerName").value = entry.ownerName;
+    document.getElementById("numAdults").value = entry.numAdults;
+    document.getElementById("numChildren").value = entry.numChildren;
+    document.getElementById("timeSlot").value = entry.timeSlot;
+    document.getElementById("notes").value = entry.notes || "";
+    document.getElementById("date").value = entry.date;
+    document.getElementById("date").dispatchEvent(new Event("change"));
+
+    document.querySelector("#breakfastForm button[type=submit]").textContent = "Salva Modifica";
+  }
+
+  // Form submit: aggiunge o aggiorna prenotazione
+  document.getElementById("breakfastForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const date = document.getElementById("date").value;
+    const ownerName = document.getElementById("ownerName").value.trim();
+    const numAdults = parseInt(document.getElementById("numAdults").value);
+    const numChildren = parseInt(document.getElementById("numChildren").value);
+    const timeSlot = document.getElementById("timeSlot").value;
+    const notes = document.getElementById("notes").value.trim();
+    const numBreakfasts = numAdults + numChildren;
+
+    if (!ownerName) {
+      alert("Inserisci il nome dell'ospite.");
+      return;
+    }
+
+    const all = await getData(date);
+    const currentBookings = all.filter(b => b.id !== editingId);
+    const totalPeopleInSlot = currentBookings.reduce((sum, b) => sum + b.numBreakfasts, 0);
+    if (totalPeopleInSlot + numBreakfasts > 15) {
+      alert(`Limite raggiunto: massimo 15 persone per la fascia ${timeSlot}.`);
+      return;
+    }
+
+    const entry = { date, ownerName, numAdults, numChildren, timeSlot, notes, numBreakfasts };
+
+    try {
+      if (editingId) {
+        await updateEntry(editingId, entry);
+        editingId = null;
+        this.querySelector("button[type=submit]").textContent = "Aggiungi";
+      } else {
+        await addEntry(entry);
+      }
+      this.reset();
+      await renderList();
+      await renderActiveDays();
+    } catch (error) {
+      alert("Errore nel salvataggio: " + error.message);
+      console.error(error);
+    }
+  });
+
+  // Aggiorna lista e giorni attivi al cambio data
+  document.getElementById("date").addEventListener("change", async () => {
+    const selectedDate = document.getElementById("date").value;
+    const [year, month, day] = selectedDate.split("-");
+    const birthdayBanner = document.getElementById("birthdayBanner");
+    birthdayBanner.style.display = (day === "18" && month === "12") ? "block" : "none";
+    document.getElementById("formDateDesc").textContent = `Compila i dettagli per ${day}/${month}/${year}`;
+    await renderList();
+    await renderActiveDays();
+  });
+
+  // Inizializza data oggi e carica dati
+  window.addEventListener("load", () => {
+    const today = new Date().toISOString().slice(0, 10);
+    document.getElementById("date").value = today;
+    document.getElementById("date").dispatchEvent(new Event("change"));
+  });
+
+  // flatpickr configurazione come nel tuo originale
+  flatpickr("#date", {
+    dateFormat: "d-m-Y",
+    defaultDate: new Date(),
+    locale: "it",
+    onChange: function(selectedDates, dateStr) {
+      const [day, month, year] = dateStr.split("-");
+      const isoDate = `${year}-${month}-${day}`;
+      document.getElementById("date").value = isoDate;
+      document.getElementById("date").dispatchEvent(new Event("change"));
+    },
+    onDayCreate: function(dObj, dStr, fp, dayElem) {
+      getAllData().then(allData => {
+        const bookedDates = [...new Set(allData.map(b => b.date))];
+        const day = dayElem.dateObj;
+        const y = day.getFullYear();
+        const m = (day.getMonth() + 1).toString().padStart(2, "0");
+        const d = day.getDate().toString().padStart(2, "0");
+        const formatted = `${y}-${m}-${d}`;
+
+        if (bookedDates.includes(formatted)) {
+          dayElem.style.backgroundColor = "#d4edda";
+          dayElem.style.borderRadius = "4px";
+          dayElem.style.color = "#155724";
+        }
+      });
+    }
+  });
+</script>
+
+
+
 </body>
 </html>
