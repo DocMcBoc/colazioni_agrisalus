@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Prenotazioni giornaliere</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Nunito', sans-serif;
+      margin: 2rem;
+      background: #fefcf8;
+      color: #333;
+    }
+    h1 {
+      color: #94d3ac;
+      margin-bottom: 1rem;
+    }
+    label {
+      font-weight: 600;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+    #activeDaysContainer {
+      margin-bottom: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    #activeDaysContainer button {
+      background: #94d3ac;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 0.4rem 0.8rem;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: background-color 0.3s ease;
+    }
+    #activeDaysContainer button:hover {
+      background: #6ea686;
+    }
+    #activeDaysContainer button.selected {
+      background: #e63946;
+    }
+    input[type="date"] {
+      padding: 0.5rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      margin-bottom: 1.5rem;
+      width: 150px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      max-width: 700px;
+    }
+    #breakfastList {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .booking-card {
+      background: #fffaf0;
+      border: 1px solid #f0e9dc;
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
+    }
+    .booking-card h3 {
+      margin: 0 0 0.3rem 0;
+      font-weight: 700;
+    }
+    .booking-details span {
+      margin-right: 1rem;
+      font-size: 0.95rem;
+    }
+    @media (max-width: 480px) {
+      body {
+        margin: 1rem;
+      }
+      .card {
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📅 Prenotazioni giornaliere</h1>
+
+  <div id="activeDaysContainer">
+    <!-- Pulsanti giorni con prenotazioni generate qui -->
+  </div>
+
+  <label for="date">Seleziona una data:</label>
+  <input type="date" id="date" />
+
+  <div class="card">
+    <h2>Programma Giornaliero</h2>
+    <div id="breakfastList"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
+    import { getFirestore, collection, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA6Hu72qf0jJOolOJNEn00I5cd5XAYY9KM",
+      authDomain: "colazioni-agrisalus.firebaseapp.com",
+      projectId: "colazioni-agrisalus",
+      storageBucket: "colazioni-agrisalus.firebasestorage.app",
+      messagingSenderId: "194863060744",
+      appId: "1:194863060744:web:3b7f3ba3b5865e6bdcbebd"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const bookingsCol = collection(db, "prenotazioni");
+
+    let unsubscribe = null;
+
+    // Renderizza le prenotazioni in lista
+    function renderBookings(data, list) {
+      list.innerHTML = "";
+      if (data.length === 0) {
+        list.innerHTML = "<p>Nessuna prenotazione per questa data.</p>";
+        return;
+      }
+
+      const slots = ["07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30"];
+      const maxPerSlot = 15;
+
+      slots.forEach((slot, i) => {
+        const bookings = data.filter(b => b.timeSlot === slot);
+        if (bookings.length > 0) {
+          const totalBooked = bookings.reduce((sum, b) => sum + b.numBreakfasts, 0);
+          const remaining = maxPerSlot - totalBooked;
+          const prenotataText = totalBooked === 1 ? "prenotata" : "prenotate";
+          let nextSlot = slots[i + 1] || slot;
+
+          const slotDiv = document.createElement("div");
+          slotDiv.className = "booking-card";
+
+          slotDiv.innerHTML = `
+            <h3>${slot} - ${nextSlot}</h3>
+            <span>${totalBooked} ${prenotataText} / ${remaining} rimanenti</span>
+          `;
+
+          bookings.forEach(b => {
+            const item = document.createElement("div");
+            item.className = "booking-details";
+            item.innerHTML = `
+              <span>👤 ${b.numAdults}</span>
+              <span>👶 ${b.numChildren}</span>
+              <span>🍽️ ${b.numBreakfasts}</span>
+              <strong>${b.ownerName}</strong>
+              <br />
+              <small>${b.notes || ""}</small>
+            `;
+            slotDiv.appendChild(item);
+          });
+
+          list.appendChild(slotDiv);
+        }
+      });
+    }
+
+    // Listener realtime per le prenotazioni della data selezionata
+    function setupRealtimeListener(date) {
+      const list = document.getElementById("breakfastList");
+      if (unsubscribe) unsubscribe();
+
+      if (!date) {
+        list.innerHTML = "<p>Seleziona una data per vedere le prenotazioni.</p>";
+        return;
+      }
+
+      const q = query(bookingsCol, where("date", "==", date));
+
+      unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const data = [];
+        querySnapshot.forEach(docSnap => data.push({ id: docSnap.id, ...docSnap.data() }));
+        renderBookings(data, list);
+      }, (error) => {
+        console.error("Errore nel listener realtime:", error);
+      });
+    }
+
+    // Funzione per caricare e mostrare i giorni con prenotazioni attive
+    async function renderActiveDays() {
+      const container = document.getElementById("activeDaysContainer");
+      container.innerHTML = "";
+
+      const allSnapshot = await getDocs(bookingsCol);
+      const datesSet = new Set();
+      allSnapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        if (data.date) datesSet.add(data.date);
+      });
+
+      const uniqueDates = Array.from(datesSet).sort();
+
+      uniqueDates.forEach(date => {
+        const btn = document.createElement("button");
+        const [y,m,d] = date.split("-");
+        btn.textContent = `${parseInt(d)}-${m}`;
+        btn.title = date;
+        btn.onclick = () => {
+          document.getElementById("date").value = date;
+          setupRealtimeListener(date);
+          highlightActiveDay(date);
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    // Evidenzia il giorno selezionato tra quelli attivi
+    function highlightActiveDay(date) {
+      const buttons = document.querySelectorAll("#activeDaysContainer button");
+      buttons.forEach(btn => {
+        btn.classList.toggle("selected", btn.title === date);
+      });
+    }
+
+    // Gestisci cambio data input
+    document.getElementById("date").addEventListener("change", e => {
+      setupRealtimeListener(e.target.value);
+      highlightActiveDay(e.target.value);
+    });
+
+    // Caricamento iniziale
+    window.addEventListener("load", async () => {
+      await renderActiveDays();
+
+      const today = new Date().toISOString().slice(0,10);
+      // Se oggi è tra le date attive selezionalo, altrimenti la prima data attiva
+      const activeDates = Array.from(document.querySelectorAll("#activeDaysContainer button")).map(b => b.title);
+      const dateToSelect = activeDates.includes(today) ? today : (activeDates[0] || today);
+
+      document.getElementById("date").value = dateToSelect;
+      highlightActiveDay(dateToSelect);
+      setupRealtimeListener(dateToSelect);
+    });
+  </script>
+
+</body>
+</html>
