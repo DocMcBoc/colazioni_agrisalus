@@ -313,42 +313,20 @@
   }
 
   // Aggiorna prenotazione
-async function editEntry(id) {
-  const docRef = doc(db, "prenotazioni", id);
-  const docSnap = await getDoc(docRef);
-  if (!docSnap.exists()) {
-    alert("Prenotazione non trovata");
-    return;
+  async function updateEntry(id, data) {
+    const docRef = doc(db, "prenotazioni", id);
+    await updateDoc(docRef, data);
   }
-  const entry = docSnap.data();
-  editingId = id;
-
-  document.getElementById("ownerName").value = entry.ownerName;
-  document.getElementById("numAdults").value = entry.numAdults;
-  document.getElementById("numChildren").value = entry.numChildren;
-  document.getElementById("timeSlot").value = entry.timeSlot;
-  document.getElementById("notes").value = entry.notes || "";
-  document.getElementById("date").value = entry.date;
-  document.getElementById("date").dispatchEvent(new Event("change"));
-
-  document.querySelector("#breakfastForm button[type=submit]").textContent = "Salva Modifica";
-}
-
 
   // Cancella prenotazione
-async function deleteEntry(id) {
-  if (!confirm("Sei sicuro di voler eliminare questa prenotazione?")) return;
-  const docRef = doc(db, "prenotazioni", id);
-  await deleteDoc(docRef);
-  if (editingId === id) {
-    editingId = null;
-    document.getElementById("breakfastForm").reset();
-    document.querySelector("#breakfastForm button[type=submit]").textContent = "Aggiungi";
+  async function deleteEntry(id) {
+    if (confirm("Sei sicuro di voler eliminare questa prenotazione?")) {
+      const docRef = doc(db, "prenotazioni", id);
+      await deleteDoc(docRef);
+      await renderList();
+      await renderActiveDays();
+    }
   }
-  await renderList();
-  await renderActiveDays();
-}
-
 
   // Renderizza lista prenotazioni per data
   async function renderList() {
