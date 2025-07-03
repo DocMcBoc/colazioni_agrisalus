@@ -152,19 +152,22 @@
             <span>${totalBooked} ${prenotataText} / ${remaining} rimanenti</span>
           `;
 
-          bookings.forEach(b => {
-            const item = document.createElement("div");
-            item.className = "booking-details";
-            item.innerHTML = `
-              <span>👤 ${b.numAdults}</span>
-              <span>👶 ${b.numChildren}</span>
-              <span>🍽️ ${b.numBreakfasts}</span>
-              <strong>${b.ownerName}</strong>
-              <br />
-              <small>${b.notes || ""}</small>
-            `;
-            slotDiv.appendChild(item);
-          });
+            bookings.forEach(b => {
+    const item = document.createElement("div");
+    item.className = "booking-details";
+    const noteText = (b.notes && b.notes.toLowerCase() !== "bianco") ? b.notes : "";
+    item.innerHTML = `
+      <span>👤 ${b.numAdults}</span>
+      <span>👶 ${b.numChildren}</span>
+      <span>🍽️ ${b.numBreakfasts}</span>
+      <strong>${b.ownerName}</strong>
+      <br />
+      ${noteText ? `<small>${noteText}</small>` : ""}
+    `;
+    slotDiv.appendChild(item);
+  });
+
+
 
           list.appendChild(slotDiv);
         }
