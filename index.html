@@ -434,35 +434,53 @@ function closeEditModal() {
   }
 
   // Renderizza giorni con prenotazioni attive (bottone)
-  async function renderActiveDays() {
-    const container = document.getElementById("activeDaysContainer");
-    const allData = await getAllData();
-    const daysSet = new Set(allData.map(b => b.date));
-    const days = Array.from(daysSet).sort();
+async function renderActiveDays() {
+  const container = document.getElementById("activeDaysContainer");
+  const allData = await getAllData();
+  const daysSet = new Set(allData.map(b => b.date));
 
-    container.innerHTML = "";
+  container.innerHTML = "";
 
-    days.forEach(day => {
-      const btn = document.createElement("button");
-      btn.textContent = day.split("-").reverse().join("/");
-      btn.onclick = () => {
-        document.getElementById("date").value = day;
-        renderList();
-        highlightSelectedDay(day);
-      };
-      container.appendChild(btn);
-    });
+  const today = new Date();
+  for (let i = 0; i < 28; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${yyyy}-${mm}-${dd}`;
 
-    highlightSelectedDay(document.getElementById("date").value);
+    const dayNames = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
+    const dayName = dayNames[date.getDay()];
+
+    const btn = document.createElement("button");
+    btn.textContent = `${dayName} ${dd}/${mm}`;
+    btn.dataset.date = dateStr;
+
+    if (daysSet.has(dateStr)) {
+      btn.style.backgroundColor = "#c8e6c9"; // verde chiaro
+      btn.style.borderColor = "#a5d6a7";
+    }
+
+    btn.onclick = () => {
+      document.getElementById("date").value = dateStr;
+      renderList();
+      highlightSelectedDay(dateStr);
+      document.getElementById("formDateDesc").textContent = `Data selezionata: ${dd}/${mm}/${yyyy}`;
+    };
+
+    container.appendChild(btn);
   }
 
-  function highlightSelectedDay(day) {
-    const buttons = document.querySelectorAll("#activeDaysContainer button");
-    buttons.forEach(btn => {
-      btn.classList.toggle("selected", btn.textContent === day.split("-").reverse().join("/"));
-    });
-  }
+  highlightSelectedDay(document.getElementById("date").value);
+}
 
+function highlightSelectedDay(day) {
+  const buttons = document.querySelectorAll("#activeDaysContainer button");
+  buttons.forEach(btn => {
+    btn.classList.toggle("selected", btn.dataset.date === day);
+  });
+}
   // Inizializza data a oggi
   function setToday() {
     const today = new Date().toISOString().slice(0, 10);
