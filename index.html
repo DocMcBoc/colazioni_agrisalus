@@ -211,9 +211,20 @@
   }
 }
 
+.booking-completed {
+  background-color: #d3d3d3;
+  box-shadow: 0 0 8px 2px rgba(100,100,100,0.5);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
     
   </style>
+
+
 </head>
+
+
+
 <body>
   <div id="birthdayBanner" style="display: none; font-size: 1.5rem; color: var(--accent); text-align: center; margin-bottom: 1rem;">
     🎉 Buon compleanno Silvia! 🎉
@@ -412,10 +423,13 @@ function closeEditModal() {
 
         bookings.forEach(b => {
           const subCard = document.createElement("div");
-          subCard.style.backgroundColor = "#fffaf0";
           subCard.style.padding = "0.6rem 1rem";
           subCard.style.borderRadius = "8px";
           subCard.style.boxShadow = "inset 0 0 5px rgba(0,0,0,0.05)";
+          subCard.style.backgroundColor = b.completed ? "#d3d3d3" : "#fffaf0";
+          if(b.completed) {
+            subCard.classList.add("booking-completed");
+          }
           subCard.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; font-weight: bold;">
               ${b.ownerName}
@@ -424,15 +438,20 @@ function closeEditModal() {
                 <span class="delete-button" onclick="deleteEntry('${b.id}')" title="Elimina">🗑️</span>
               </div>
             </div>
-              <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.3rem; font-size: 0.95rem;">
-                <span>🍽️ ${b.numBreakfasts}</span>
-                <span>👤 ${b.numAdults}</span>
-                ${b.numChildren > 0 ? `<span>👶 ${b.numChildren}</span>` : ""}
-                ${b.numSeats > 0 ? `<span>🪑 ${b.numSeats}</span>` : ""}
-              </div>
+            <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.3rem; font-size: 0.95rem;">
+              <span>🍽️ ${b.numBreakfasts}</span>
+              <span>👤 ${b.numAdults}</span>
+              <span>👶 ${b.numChildren}</span>
+              ${b.numSeats > 0 ? `<span>🪑 ${b.numSeats}</span>` : ""}
+            </div>
+            <button style="margin-top:0.8rem; padding:0.3rem 0.6rem; border:none; border-radius:6px; background-color: ${b.completed ? '#6c757d' : '#94d3ac'}; color:white; cursor:pointer;" 
+              onclick="toggleCompleted('${b.id}', ${b.completed})">
+              ${b.completed ? 'Riapri' : 'Completata'}
+            </button>
             ${b.bread ? `<div style="margin-top: 0.3rem; font-style: italic; color: var(--muted); font-size: 0.9rem;">🥖 ${b.bread}</div>` : ""}
             ${b.notes ? `<div style="margin-top: 0.3rem; font-style: italic; color: var(--muted); font-size: 0.9rem;">📝 ${b.notes}</div>` : ""}
           `;
+
           bookingsContainer.appendChild(subCard);
         });
 
@@ -524,7 +543,7 @@ function highlightSelectedDay(day) {
     }
 
     try {
-      await addEntry({ date, ownerName, numAdults, numChildren, timeSlot, notes, bread, numBreakfasts, numSeats });
+      await addEntry({ date, ownerName, numAdults, numChildren, timeSlot, notes, bread, numBreakfasts, completed: false });
       e.target.reset();
       renderList();
       renderActiveDays();
@@ -651,17 +670,23 @@ function highlightSelectedDay(day) {
       }
 
       try {
-        await updateEntry(editingId, {
-          ownerName,
-          numAdults,
-          numChildren,
-          timeSlot,
-          notes,
-          bread,
-          numBreakfasts,
-          numSeats,
-          date: document.getElementById("date").value // data resta invariata
-        });
+          const docRef = doc(db, "prenotazioni", editingId);
+          const oldSnap = await getDoc(docRef);
+          const oldData = oldSnap.data();
+          const completed = oldData?.completed ?? false;
+
+          await updateDoc(docRef, {
+            ownerName,
+            numAdults,
+            numChildren,
+            timeSlot,
+            notes,
+            bread,
+            numBreakfasts,
+            date: document.getElementById("date").value,
+            completed // lo reinserisci
+          });
+
         modal.style.display = "none";
         editingId = null;
         renderList();
@@ -696,6 +721,19 @@ function highlightSelectedDay(day) {
     renderList();
     renderActiveDays();
   });
+
+async function toggleCompleted(id, currentlyCompleted) {
+  if (currentlyCompleted) {
+    const conferma = confirm("Vuoi riaprire la colazione?");
+    if (!conferma) return;
+  }
+  const docRef = doc(db, "prenotazioni", id);
+  await updateDoc(docRef, { completed: !currentlyCompleted });
+  renderList();
+}
+window.toggleCompleted = toggleCompleted;
+
+
 </script>
 </body>
 </html>
