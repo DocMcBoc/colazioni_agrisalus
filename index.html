@@ -246,11 +246,36 @@
     </div>
   </div>
 
-  <div class="container">
+<div class="container">
+  <div class="left-column">
+    <div class="card">
+      <h2>Prenotazioni Pane</h2>
+      <p class="muted" id="breadDateDesc"></p>
+      <form id="breadForm">
+        <label style="margin-top: 1rem; display: flex; align-items: center; gap: 0.4rem;">
+        <img src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png" alt="calendario" style="width: 18px; height: 18px;" />
+        <input type="text" id="breadDate" placeholder="Data prenotazione" required
+          style="border: none; background: #fffaf0; color: #555; font-size: 1rem; padding: 0.3rem 0.6rem; border-radius: 6px; border: 1px solid #ddd; width: 100%;" />
+      </label>
+        <label>Ospite
+          <input type="text" id="breadOwner" placeholder="Filemazio" required />
+        </label>
+        <label style="margin-top: 1rem;">Tipo di pane
+          <input type="text" id="breadType" placeholder="Tipo di pane" required />
+        </label>
+        <button type="submit" style="margin-top: 1rem;">Aggiungi Prenotazione Pane</button>
+      </form>
+    </div>
+
     <div class="card">
       <h2>Aggiungi Nuova Colazione</h2>
       <p class="muted" id="formDateDesc"></p>
       <form id="breakfastForm">
+        <label style="margin-top: 1rem; display: flex; align-items: center; gap: 0.4rem;">
+        <img src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png" alt="calendario" style="width: 18px; height: 18px;" />
+        <input type="text" id="breakfastDate" placeholder="Data prenotazione" required
+          style="border: none; background: #fffaf0; color: #555; font-size: 1rem; padding: 0.3rem 0.6rem; border-radius: 6px; border: 1px solid #ddd; width: 100%;" />
+      </label>
         <label>Ospite
           <input type="text" id="ownerName" placeholder="Filemazio" required />
         </label>
@@ -271,14 +296,14 @@
             </label>
             <input type="number" id="numChildren" min="0" max="15" value="0" required style="width: 100%; margin-top: 0.3rem;" />
           </div>
-        <div style="flex: 1; display: flex; flex-direction: column; align-items: flex-start;">
+
+          <div style="flex: 1; display: flex; flex-direction: column; align-items: flex-start;">
             <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
-                <span>🪑</span>
-                <span>Seggiolini</span>
+              <span>🪑</span>
+              <span>Seggiolini</span>
             </label>
             <input type="number" id="numSeats" min="0" max="10" value="0" required style="width: 100%; margin-top: 0.3rem;" />
-         </div>
-
+          </div>
         </div>
 
         <label style="margin-top: 1rem;">Fascia Oraria
@@ -306,6 +331,14 @@
         <button type="submit" style="margin-top: 1rem;">Aggiungi</button>
       </form>
     </div>
+  </div>
+
+  <div class="right-column">
+    <div class="card">
+      <h2>Elenco Prenotazioni Pane</h2>
+      <p class="muted">Solo prenotazioni di pane separate dalla colazione.</p>
+      <div id="breadOnlyList"></div>
+    </div>
 
     <div class="card">
       <h2>Programma Giornaliero</h2>
@@ -313,6 +346,7 @@
       <div id="breakfastList"></div>
     </div>
   </div>
+</div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
@@ -381,7 +415,7 @@ function closeEditModal() {
   // Renderizza lista prenotazioni per data
   async function renderList() {
     const list = document.getElementById("breakfastList");
-    const date = document.getElementById("date").value;
+    const date = document.getElementById("breadDate").value;
     const data = await getData(date);
     const summary = document.getElementById("summary");
 
@@ -458,6 +492,23 @@ function closeEditModal() {
         slotDiv.appendChild(bookingsContainer);
         list.appendChild(slotDiv);
       }
+      // RENDER PRENOTAZIONI SOLO PANE
+      const breadOnlyList = document.getElementById("breadOnlyList");
+      breadOnlyList.innerHTML = "";
+
+      const onlyBreadBookings = data.filter(b => b.breadOnly);
+      onlyBreadBookings.forEach(b => {
+        const paneDiv = document.createElement("div");
+        paneDiv.style.background = "#fdf6ee";
+        paneDiv.style.padding = "0.6rem 1rem";
+        paneDiv.style.borderRadius = "8px";
+        paneDiv.style.marginBottom = "0.5rem";
+        paneDiv.style.boxShadow = "inset 0 0 3px rgba(0,0,0,0.05)";
+        paneDiv.innerHTML = `<strong>${b.ownerName}</strong> — 🥖 ${b.bread}`;
+        breadOnlyList.appendChild(paneDiv);
+      });
+
+      
     });
   }
 
@@ -525,7 +576,7 @@ function highlightSelectedDay(day) {
   document.getElementById("breakfastForm").addEventListener("submit", async e => {
     e.preventDefault();
 
-    const date = document.getElementById("date").value;
+    const date = document.getElementById("breakfastDate").value;
     const ownerName = document.getElementById("ownerName").value.trim();
     const numAdults = Number(document.getElementById("numAdults").value);
     const numChildren = Number(document.getElementById("numChildren").value);
@@ -551,6 +602,43 @@ function highlightSelectedDay(day) {
       alert("Errore nel salvataggio: " + err.message);
     }
   });
+
+
+document.getElementById("breadForm").addEventListener("submit", async e => {
+  e.preventDefault();
+
+  const date = document.getElementById("date").value;
+  const ownerName = document.getElementById("breadOwner").value.trim();
+  const bread = document.getElementById("breadType").value.trim();
+
+  if (!date || !ownerName || !bread) {
+    alert("Compila correttamente i campi.");
+    return;
+  }
+
+  try {
+    await addEntry({
+      date,
+      ownerName,
+      numAdults: 0,
+      numChildren: 0,
+      timeSlot: "",
+      bread,
+      notes: "",
+      numBreakfasts: 0,
+      completed: false,
+      breadOnly: true
+    });
+
+    e.target.reset();
+    renderList();
+    renderActiveDays();
+  } catch (err) {
+    alert("Errore nel salvataggio: " + err.message);
+  }
+});
+
+
 
   // Funzione per edit
   async function editEntry(id) {
@@ -720,6 +808,20 @@ function highlightSelectedDay(day) {
     setToday();
     renderList();
     renderActiveDays();
+    flatpickr.localize(flatpickr.l10ns.it);
+
+flatpickr("#breadDate", {
+  dateFormat: "Y-m-d",
+  defaultDate: new Date(),
+  locale: "it"
+});
+
+flatpickr("#breakfastDate", {
+  dateFormat: "Y-m-d",
+  defaultDate: new Date(),
+  locale: "it"
+});
+
   });
 
 async function toggleCompleted(id, currentlyCompleted) {
