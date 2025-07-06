@@ -260,6 +260,14 @@
             </label>
             <input type="number" id="numChildren" min="0" max="15" value="0" required style="width: 100%; margin-top: 0.3rem;" />
           </div>
+        <div style="flex: 1; display: flex; flex-direction: column; align-items: flex-start;">
+            <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
+                <span>🪑</span>
+                <span>Seggiolini</span>
+            </label>
+            <input type="number" id="numSeats" min="0" max="10" value="0" required style="width: 100%; margin-top: 0.3rem;" />
+         </div>
+
         </div>
 
         <label style="margin-top: 1rem;">Fascia Oraria
@@ -416,11 +424,12 @@ function closeEditModal() {
                 <span class="delete-button" onclick="deleteEntry('${b.id}')" title="Elimina">🗑️</span>
               </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.3rem; font-size: 0.95rem;">
-              <span>👤 ${b.numAdults}</span>
-              <span>👶 ${b.numChildren}</span>
-              <span>🍽️ ${b.numBreakfasts}</span>
-            </div>
+              <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.3rem; font-size: 0.95rem;">
+                <span>🍽️ ${b.numBreakfasts}</span>
+                <span>👤 ${b.numAdults}</span>
+                <span>👶 ${b.numChildren}</span>
+                ${b.numSeats > 0 ? `<span>🪑 ${b.numSeats}</span>` : ""}
+              </div>
             ${b.bread ? `<div style="margin-top: 0.3rem; font-style: italic; color: var(--muted); font-size: 0.9rem;">🥖 ${b.bread}</div>` : ""}
             ${b.notes ? `<div style="margin-top: 0.3rem; font-style: italic; color: var(--muted); font-size: 0.9rem;">📝 ${b.notes}</div>` : ""}
           `;
@@ -504,8 +513,10 @@ function highlightSelectedDay(day) {
     const timeSlot = document.getElementById("timeSlot").value;
     const notes = document.getElementById("notes").value.trim();
     const bread = document.getElementById("bread").value.trim();
-
+    const numSeats = Number(document.getElementById("numSeats").value);
     const numBreakfasts = calcBreakfasts(numAdults, numChildren);
+
+
 
     if (!date || !ownerName || numAdults < 0 || numChildren < 0) {
       alert("Compila correttamente tutti i campi obbligatori.");
@@ -513,7 +524,7 @@ function highlightSelectedDay(day) {
     }
 
     try {
-      await addEntry({ date, ownerName, numAdults, numChildren, timeSlot, notes, bread, numBreakfasts });
+      await addEntry({ date, ownerName, numAdults, numChildren, timeSlot, notes, bread, numBreakfasts, numSeats });
       e.target.reset();
       renderList();
       renderActiveDays();
@@ -547,7 +558,7 @@ function highlightSelectedDay(day) {
     document.getElementById("editNotes").value = entry.notes || "";
     document.getElementById("editBread").value = entry.bread || "";
     document.getElementById("editNumBreakfasts").textContent = calcBreakfasts(entry.numAdults, entry.numChildren);
-
+    document.getElementById("editNumSeats").value = entry.numSeats || 0;
     document.getElementById("editModal").style.display = "block";
   }
 
@@ -555,29 +566,38 @@ function highlightSelectedDay(day) {
   function createEditModal() {
     const modal = document.createElement("div");
     modal.id = "editModal";
-    modal.style = `
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-    `;
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.right = '0';
+    modal.style.bottom = '0';
+    modal.style.background = 'rgba(0,0,0,0.5)';
+    modal.style.display = 'flex';
+    modal.style.justifyContent = 'center';
+    modal.style.alignItems = 'center';
+    modal.style.zIndex = '9999';
 
     modal.innerHTML = `
-      <div style="background: white; padding: 1rem 2rem; border-radius: 12px; width: 320px; max-width: 95%; position: relative;">
+      <div style="background: white; padding: 1rem 2rem; border-radius: 12px; width: 400px; max-width: 95%; position: relative;">
         <h2>Modifica Prenotazione</h2>
         <form id="editForm">
           <label>Ospite
             <input type="text" id="editOwnerName" required />
           </label>
-          <label style="margin-top: 1rem;">Adulti
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+          <label style="flex: 1;">
+            Adulti
             <input type="number" id="editNumAdults" min="0" max="15" required />
           </label>
-          <label style="margin-top: 1rem;">Bambini
+          <label style="flex: 1;">
+            Bambini
             <input type="number" id="editNumChildren" min="0" max="15" required />
           </label>
+          <label style="flex: 1;">
+            Seggiolini
+            <input type="number" id="editNumSeats" min="0" max="15" value="0" required />
+          </label>
+        </div>
           <label style="margin-top: 1rem;">Fascia Oraria
             <select id="editTimeSlot">
               <option value="07:30">07:30</option>
@@ -622,7 +642,7 @@ function highlightSelectedDay(day) {
       const timeSlot = document.getElementById("editTimeSlot").value;
       const notes = document.getElementById("editNotes").value.trim();
       const bread = document.getElementById("editBread").value.trim();
-
+      const numSeats = Number(document.getElementById("editNumSeats").value);
       const numBreakfasts = calcBreakfasts(numAdults, numChildren);
 
       if (!ownerName || numAdults < 0 || numChildren < 0) {
@@ -639,6 +659,7 @@ function highlightSelectedDay(day) {
           notes,
           bread,
           numBreakfasts,
+          numSeats,
           date: document.getElementById("date").value // data resta invariata
         });
         modal.style.display = "none";
