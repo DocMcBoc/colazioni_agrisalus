@@ -427,7 +427,7 @@ function closeEditModal() {
               <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.3rem; font-size: 0.95rem;">
                 <span>🍽️ ${b.numBreakfasts}</span>
                 <span>👤 ${b.numAdults}</span>
-                <span>👶 ${b.numChildren}</span>
+                ${b.numChildren > 0 ? `<span>👶 ${b.numChildren}</span>` : ""}
                 ${b.numSeats > 0 ? `<span>🪑 ${b.numSeats}</span>` : ""}
               </div>
             ${b.bread ? `<div style="margin-top: 0.3rem; font-style: italic; color: var(--muted); font-size: 0.9rem;">🥖 ${b.bread}</div>` : ""}
