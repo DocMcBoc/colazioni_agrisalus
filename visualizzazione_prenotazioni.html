@@ -22,10 +22,10 @@
       margin-bottom: 0.5rem;
     }
     #activeDaysContainer {
-      margin-bottom: 1rem;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 1rem;
     }
     #activeDaysContainer button {
       background: #94d3ac;
@@ -42,7 +42,7 @@
       background: #6ea686;
     }
     #activeDaysContainer button.selected {
-      background: #e63946;
+      background: #FFA500
     }
     input[type="date"] {
       padding: 0.5rem;
@@ -101,12 +101,22 @@
   <label for="date">Seleziona una data:</label>
   <input type="date" id="date" />
 
+
+    <div class="card" id="breadCard">
+    <h2>🍞 Pane del Giorno</h2>
+    <div id="breadList">
+        <p>Seleziona una data per vedere il pane disponibile.</p>
+    </div>
+    </div>
+
+
+
   <div class="card">
     <h2>Programma Giornaliero</h2>
     <div id="breakfastList"></div>
   </div>
 
-  <script type="module">
+   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
     import { getFirestore, collection, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 
@@ -127,11 +137,14 @@
 
     // Renderizza le prenotazioni in lista
     function renderBookings(data, list) {
-      list.innerHTML = "";
-      if (data.length === 0) {
-        list.innerHTML = "<p>Nessuna prenotazione per questa data.</p>";
+        list.innerHTML = "";
+
+        const onlyBread = data.every(b => !b.timeSlot || b.timeSlot.trim() === "");
+
+        if (data.length === 0 || onlyBread) {
+        list.innerHTML = "<p>Nessuna prenotazione (per ora).</p>";
         return;
-      }
+        }
 
       const slots = ["07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30"];
       const maxPerSlot = 15;
@@ -158,14 +171,14 @@
             const noteText = b.notes || "";
             const breadText = b.bread || "";
             item.innerHTML = `
-              <span>👤 ${b.numAdults}</span>
-              <span>👶 ${b.numChildren}</span>
-              <span>🍽️ ${b.numBreakfasts}</span>
-              <strong>${b.ownerName}</strong>
-              <br />
-              ${noteText ? `<small>${noteText}</small><br />` : ""}
-              ${breadText ? `<small>🥖 ${breadText}</small>` : ""}
-              <hr style="border:none; border-bottom: 1px solid #ddd; margin: 0.6rem 0;" />
+                <span>🍽️ ${b.numBreakfasts}</span>
+                <span>👤 ${b.numAdults}</span>
+                ${b.numChildren > 0 ? `<span>👶 ${b.numChildren}</span>` : ""}
+                ${b.numSeats > 0 ? `<span>🪑 ${b.numSeats}</span>` : ""}
+                <strong>${b.ownerName}</strong>
+                <br />
+                ${noteText ? `<small>${noteText}</small><br />` : ""}
+                <hr style="border:none; border-bottom: 1px solid #ddd; margin: 0.6rem 0;" />
             `;
             slotDiv.appendChild(item);
           });
@@ -175,13 +188,64 @@
       });
     }
 
+    // Renderizza il pane del giorno in base ai dati prenotazioni per la data selezionata
+        function renderBreadForDate(data, container) {
+        container.innerHTML = "";
+        const slots = ["07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30"];
+
+        let anyBread = false;
+
+        slots.forEach((slot, i) => {
+            const nextSlot = slots[i + 1] || slot;
+            const bookingsInSlot = data.filter(b => b.timeSlot === slot && b.bread && b.bread.trim() !== "");
+
+            if (bookingsInSlot.length > 0) {
+            anyBread = true;
+
+            const section = document.createElement("div");
+            section.className = "booking-card";
+
+            const heading = document.createElement("h3");
+            heading.textContent = `${slot} - ${nextSlot}`;
+            section.appendChild(heading);
+
+            bookingsInSlot.forEach(b => {
+                const div = document.createElement("div");
+                div.innerHTML = `
+                <strong>${b.ownerName}</strong>
+                ${b.bread ? `<br /><small>🥖 ${b.bread}</small>` : ""}
+                <hr style="border:none; border-bottom: 1px solid #ddd; margin: 0.4rem 0;" />
+                `;
+                section.appendChild(div);
+            });
+
+            container.appendChild(section);
+            }
+        });
+
+        if (!anyBread) {
+            container.innerHTML = "<p>Nessuna prenotazione (per ora)</p>";
+        }
+        
+
+      const ul = document.createElement("ul");
+      breads.forEach(bread => {
+        const li = document.createElement("li");
+        li.textContent = bread;
+        ul.appendChild(li);
+      });
+      container.appendChild(ul);
+    }
+
     // Listener realtime per le prenotazioni della data selezionata
     function setupRealtimeListener(date) {
       const list = document.getElementById("breakfastList");
+      const breadList = document.getElementById("breadList");
       if (unsubscribe) unsubscribe();
 
       if (!date) {
         list.innerHTML = "<p>Seleziona una data per vedere le prenotazioni.</p>";
+        breadList.innerHTML = "<p>Seleziona una data per vedere il pane disponibile.</p>";
         return;
       }
 
@@ -191,38 +255,47 @@
         const data = [];
         querySnapshot.forEach(docSnap => data.push({ id: docSnap.id, ...docSnap.data() }));
         renderBookings(data, list);
+        renderBreadForDate(data, breadList);
       }, (error) => {
         console.error("Errore nel listener realtime:", error);
       });
     }
 
     // Funzione per caricare e mostrare i giorni con prenotazioni attive
-    async function renderActiveDays() {
-      const container = document.getElementById("activeDaysContainer");
-      container.innerHTML = "";
+async function renderActiveDays() {
+  const container = document.getElementById("activeDaysContainer");
+  container.innerHTML = "";
 
-      const allSnapshot = await getDocs(bookingsCol);
-      const datesSet = new Set();
-      allSnapshot.forEach(docSnap => {
-        const data = docSnap.data();
-        if (data.date) datesSet.add(data.date);
-      });
+  const allSnapshot = await getDocs(bookingsCol);
+  const datesSet = new Set();
+  allSnapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    if (data.date) datesSet.add(data.date);
+  });
 
-      const uniqueDates = Array.from(datesSet).sort();
+  const uniqueDates = Array.from(datesSet).sort();
 
-      uniqueDates.forEach(date => {
-        const btn = document.createElement("button");
-        const [y,m,d] = date.split("-");
-        btn.textContent = `${parseInt(d)}-${m}`;
-        btn.title = date;
-        btn.onclick = () => {
-          document.getElementById("date").value = date;
-          setupRealtimeListener(date);
-          highlightActiveDay(date);
-        };
-        container.appendChild(btn);
-      });
-    }
+  uniqueDates.forEach(dateStr => {
+    const date = new Date(dateStr);
+    const dayNames = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+    const weekday = dayNames[date.getDay()];
+    const d = date.getDate();
+    const m = date.getMonth() + 1;
+
+    const btn = document.createElement("button");
+    btn.textContent = `${weekday} ${d}-${String(m).padStart(2, "0")}`;
+    btn.title = dateStr;
+
+    btn.onclick = () => {
+      document.getElementById("date").value = dateStr;
+      setupRealtimeListener(dateStr);
+      highlightActiveDay(dateStr);
+    };
+
+    container.appendChild(btn);
+  });
+}
+
 
     // Evidenzia il giorno selezionato tra quelli attivi
     function highlightActiveDay(date) {
@@ -252,6 +325,7 @@
       setupRealtimeListener(dateToSelect);
     });
   </script>
+
 
 </body>
 </html>
