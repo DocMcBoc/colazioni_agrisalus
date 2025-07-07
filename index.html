@@ -136,11 +136,11 @@
       margin-top: 1rem;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
     }
+
     #activeDaysContainer {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
+      display: block;
     }
+
     #activeDaysContainer button {
       width: auto;
       padding: 0.3rem 0.3rem;
@@ -521,16 +521,23 @@ function closeEditModal() {
   });
 
   // Render prenotazioni solo pane
-  onlyBreadBookings.forEach(b => {
-    const paneDiv = document.createElement("div");
-    paneDiv.style.background = "#fdf6ee";
-    paneDiv.style.padding = "0.6rem 1rem";
-    paneDiv.style.borderRadius = "8px";
-    paneDiv.style.marginBottom = "0.5rem";
-    paneDiv.style.boxShadow = "inset 0 0 3px rgba(0,0,0,0.05)";
-    paneDiv.innerHTML = `<strong>${b.ownerName}</strong> — 🥖 ${b.bread} — <em>${b.timeSlot || "Orario non specificato"}</em>`;
-    breadOnlyList.appendChild(paneDiv);
-  });
+    onlyBreadBookings
+      .sort((a, b) => {
+        // Confronta gli orari come stringhe tipo "07:30" → "0730" → numero
+        const tA = a.timeSlot?.replace(":", "") || "9999";
+        const tB = b.timeSlot?.replace(":", "") || "9999";
+        return Number(tA) - Number(tB);
+      })
+      .forEach(b => {
+        const paneDiv = document.createElement("div");
+        paneDiv.style.background = "#fdf6ee";
+        paneDiv.style.padding = "0.6rem 1rem";
+        paneDiv.style.borderRadius = "8px";
+        paneDiv.style.marginBottom = "0.5rem";
+        paneDiv.style.boxShadow = "inset 0 0 3px rgba(0,0,0,0.05)";
+        paneDiv.innerHTML = `<strong>${b.ownerName}</strong> — 🥖 ${b.bread} — <em>${b.timeSlot || "Orario non specificato"}</em>`;
+        breadOnlyList.appendChild(paneDiv);
+      });
 }
 
 
@@ -554,9 +561,12 @@ async function renderActiveDays() {
 
   for (let week = 0; week < 3; week++) {
     const row = document.createElement("div");
-    row.style.display = "flex";
-    row.style.gap = "0.5rem";
-    row.style.marginBottom = "0.1rem";
+    row.style.cssText = `
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 0.5rem;
+      margin-bottom: 0.1rem;
+    `;
 
     for (let i = 0; i < 7; i++) {
       const date = new Date(startDate);
