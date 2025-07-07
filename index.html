@@ -217,6 +217,14 @@
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
+
+.flatpickr-day.selected, 
+.flatpickr-day.selected:hover {
+  background: #FFA500 !important; /* arancione */
+  color: white !important;
+  border-color: #CC8400 !important; /* un arancione più scuro per il bordo */
+}
+
     
   </style>
 
@@ -899,7 +907,7 @@ async function setupFlatpickrWithActiveDays() {
     const dateStr = `${yyyy}-${mm}-${dd}`;
 
     if (activeDatesSet.has(dateStr)) {
-      dayElem.style.backgroundColor = '#FFA500'; // arancione chiaro
+      dayElem.style.backgroundColor = '#c8e6c9'; // verde chiaro
       dayElem.style.borderRadius = '50%';
     }
   }
