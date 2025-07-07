@@ -2,35 +2,330 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <title>Gne gne</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Prenotazioni giornaliere</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
     body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: white;
-      flex-direction: column;
-      text-align: center;
+      font-family: 'Nunito', sans-serif;
+      margin: 2rem;
+      background: #fefcf8;
+      color: #333;
     }
     h1 {
-      font-size: 6rem;
-      margin: 0;
-      color: black;
+      color: #94d3ac;
+      margin-bottom: 1rem;
     }
-    p {
-      font-size: 3rem;
-      margin: 0;
-      color: black;
+    label {
+      font-weight: 600;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+    #activeDaysContainer {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    }
+    #activeDaysContainer button {
+      background: #94d3ac;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 0.4rem 0.8rem;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: background-color 0.3s ease;
+    }
+    #activeDaysContainer button:hover {
+      background: #6ea686;
+    }
+    #activeDaysContainer button.selected {
+      background: #FFA500
+    }
+    input[type="date"] {
+      padding: 0.5rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      margin-bottom: 1.5rem;
+      width: 150px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      max-width: 700px;
+    }
+    #breakfastList {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
       margin-top: 1rem;
+    }
+    .booking-card {
+      background: #fffaf0;
+      border: 1px solid #f0e9dc;
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
+    }
+    .booking-card h3 {
+      margin: 0 0 0.3rem 0;
+      font-weight: 700;
+    }
+    .booking-details span {
+      margin-right: 1rem;
+      font-size: 0.95rem;
+    }
+    @media (max-width: 480px) {
+      body {
+        margin: 1rem;
+      }
+      .card {
+        padding: 1rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>SILVIA MANDAMI LE FOTO</h1>
-  <p><br><br><br><br><br><br>  
-    gne gne gne</p>
+
+  <h1>📅 Prenotazioni giornaliere</h1>
+
+  <div id="activeDaysContainer">
+    <!-- Pulsanti giorni con prenotazioni generate qui -->
+  </div>
+
+  <label for="date">Seleziona una data:</label>
+  <input type="date" id="date" />
+
+
+    <div class="card" id="breadCard">
+    <h2>🍞 Pane del Giorno</h2>
+    <div id="breadList">
+        <p>Seleziona una data per vedere il pane disponibile.</p>
+    </div>
+    </div>
+
+
+
+  <div class="card">
+    <h2>Programma Giornaliero</h2>
+    <div id="breakfastList"></div>
+  </div>
+
+   <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
+    import { getFirestore, collection, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA6Hu72qf0jJOolOJNEn00I5cd5XAYY9KM",
+      authDomain: "colazioni-agrisalus.firebaseapp.com",
+      projectId: "colazioni-agrisalus",
+      storageBucket: "colazioni-agrisalus.firebasestorage.app",
+      messagingSenderId: "194863060744",
+      appId: "1:194863060744:web:3b7f3ba3b5865e6bdcbebd"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const bookingsCol = collection(db, "prenotazioni");
+
+    let unsubscribe = null;
+
+    // Renderizza le prenotazioni in lista
+    function renderBookings(data, list) {
+        list.innerHTML = "";
+
+        const onlyBread = data.every(b => !b.timeSlot || b.timeSlot.trim() === "");
+
+        if (data.length === 0 || onlyBread) {
+        list.innerHTML = "<p>Nessuna prenotazione (per ora).</p>";
+        return;
+        }
+
+      const slots = ["07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30"];
+      const maxPerSlot = 15;
+
+      slots.forEach((slot, i) => {
+        const bookings = data.filter(b => b.timeSlot === slot);
+        if (bookings.length > 0) {
+          const totalBooked = bookings.reduce((sum, b) => sum + b.numBreakfasts, 0);
+          const remaining = maxPerSlot - totalBooked;
+          const prenotataText = totalBooked === 1 ? "prenotata" : "prenotate";
+          let nextSlot = slots[i + 1] || slot;
+
+          const slotDiv = document.createElement("div");
+          slotDiv.className = "booking-card";
+
+          slotDiv.innerHTML = `
+            <h3>${slot} - ${nextSlot}</h3>
+            <span>${totalBooked} ${prenotataText} / ${remaining} rimanenti</span>
+          `;
+
+          bookings.forEach(b => {
+            const item = document.createElement("div");
+            item.className = "booking-details";
+            const noteText = b.notes || "";
+            const breadText = b.bread || "";
+            item.innerHTML = `
+                <span>🍽️ ${b.numBreakfasts}</span>
+                <span>👤 ${b.numAdults}</span>
+                ${b.numChildren > 0 ? `<span>👶 ${b.numChildren}</span>` : ""}
+                ${b.numSeats > 0 ? `<span>🪑 ${b.numSeats}</span>` : ""}
+                <strong>${b.ownerName}</strong>
+                <br />
+                ${noteText ? `<small>${noteText}</small><br />` : ""}
+                <hr style="border:none; border-bottom: 1px solid #ddd; margin: 0.6rem 0;" />
+            `;
+            slotDiv.appendChild(item);
+          });
+
+          list.appendChild(slotDiv);
+        }
+      });
+    }
+
+    // Renderizza il pane del giorno in base ai dati prenotazioni per la data selezionata
+        function renderBreadForDate(data, container) {
+        container.innerHTML = "";
+        const slots = ["07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30"];
+
+        let anyBread = false;
+
+        slots.forEach((slot, i) => {
+            const nextSlot = slots[i + 1] || slot;
+            const bookingsInSlot = data.filter(b => b.timeSlot === slot && b.bread && b.bread.trim() !== "");
+
+            if (bookingsInSlot.length > 0) {
+            anyBread = true;
+
+            const section = document.createElement("div");
+            section.className = "booking-card";
+
+            const heading = document.createElement("h3");
+            heading.textContent = `${slot} - ${nextSlot}`;
+            section.appendChild(heading);
+
+            bookingsInSlot.forEach(b => {
+                const div = document.createElement("div");
+                div.innerHTML = `
+                <strong>${b.ownerName}</strong>
+                ${b.bread ? `<br /><small>🥖 ${b.bread}</small>` : ""}
+                <hr style="border:none; border-bottom: 1px solid #ddd; margin: 0.4rem 0;" />
+                `;
+                section.appendChild(div);
+            });
+
+            container.appendChild(section);
+            }
+        });
+
+        if (!anyBread) {
+            container.innerHTML = "<p>Nessuna prenotazione (per ora)</p>";
+        }
+        
+
+      const ul = document.createElement("ul");
+      breads.forEach(bread => {
+        const li = document.createElement("li");
+        li.textContent = bread;
+        ul.appendChild(li);
+      });
+      container.appendChild(ul);
+    }
+
+    // Listener realtime per le prenotazioni della data selezionata
+    function setupRealtimeListener(date) {
+      const list = document.getElementById("breakfastList");
+      const breadList = document.getElementById("breadList");
+      if (unsubscribe) unsubscribe();
+
+      if (!date) {
+        list.innerHTML = "<p>Seleziona una data per vedere le prenotazioni.</p>";
+        breadList.innerHTML = "<p>Seleziona una data per vedere il pane disponibile.</p>";
+        return;
+      }
+
+      const q = query(bookingsCol, where("date", "==", date));
+
+      unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const data = [];
+        querySnapshot.forEach(docSnap => data.push({ id: docSnap.id, ...docSnap.data() }));
+        renderBookings(data, list);
+        renderBreadForDate(data, breadList);
+      }, (error) => {
+        console.error("Errore nel listener realtime:", error);
+      });
+    }
+
+    // Funzione per caricare e mostrare i giorni con prenotazioni attive
+async function renderActiveDays() {
+  const container = document.getElementById("activeDaysContainer");
+  container.innerHTML = "";
+
+  const allSnapshot = await getDocs(bookingsCol);
+  const datesSet = new Set();
+  allSnapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    if (data.date) datesSet.add(data.date);
+  });
+
+  const uniqueDates = Array.from(datesSet).sort();
+
+  uniqueDates.forEach(dateStr => {
+    const date = new Date(dateStr);
+    const dayNames = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+    const weekday = dayNames[date.getDay()];
+    const d = date.getDate();
+    const m = date.getMonth() + 1;
+
+    const btn = document.createElement("button");
+    btn.textContent = `${weekday} ${d}-${String(m).padStart(2, "0")}`;
+    btn.title = dateStr;
+
+    btn.onclick = () => {
+      document.getElementById("date").value = dateStr;
+      setupRealtimeListener(dateStr);
+      highlightActiveDay(dateStr);
+    };
+
+    container.appendChild(btn);
+  });
+}
+
+
+    // Evidenzia il giorno selezionato tra quelli attivi
+    function highlightActiveDay(date) {
+      const buttons = document.querySelectorAll("#activeDaysContainer button");
+      buttons.forEach(btn => {
+        btn.classList.toggle("selected", btn.title === date);
+      });
+    }
+
+    // Gestisci cambio data input
+    document.getElementById("date").addEventListener("change", e => {
+      setupRealtimeListener(e.target.value);
+      highlightActiveDay(e.target.value);
+    });
+
+    // Caricamento iniziale
+    window.addEventListener("load", async () => {
+      await renderActiveDays();
+
+      const today = new Date().toISOString().slice(0,10);
+      // Se oggi è tra le date attive selezionalo, altrimenti la prima data attiva
+      const activeDates = Array.from(document.querySelectorAll("#activeDaysContainer button")).map(b => b.title);
+      const dateToSelect = activeDates.includes(today) ? today : (activeDates[0] || today);
+
+      document.getElementById("date").value = dateToSelect;
+      highlightActiveDay(dateToSelect);
+      setupRealtimeListener(dateToSelect);
+    });
+  </script>
+
+
 </body>
 </html>
