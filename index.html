@@ -579,7 +579,6 @@ async function renderActiveDays() {
 
       btn.onclick = () => {
         document.getElementById("date").value = dateStr;
-        document.getElementById("date").dispatchEvent(new Event('change'));
 
         if (window.breadDatePicker) window.breadDatePicker.setDate(dateStr, true);
         if (window.breakfastDatePicker) window.breakfastDatePicker.setDate(dateStr, true);
@@ -621,8 +620,7 @@ function highlightSelectedDay(day) {
   document.getElementById("breakfastForm").addEventListener("submit", async e => {
     e.preventDefault();
 
-    const itDate = document.getElementById("breakfastDate").value;
-    const date = itDateToIso(itDate);
+    const date = document.getElementById("breakfastDate").value;
     const ownerName = document.getElementById("ownerName").value.trim();
     const numAdults = Number(document.getElementById("numAdults").value);
     const numChildren = Number(document.getElementById("numChildren").value);
@@ -653,8 +651,7 @@ function highlightSelectedDay(day) {
 document.getElementById("breadForm").addEventListener("submit", async e => {
   e.preventDefault();
 
-  const itDate = document.getElementById("date").value;
-  const date = itDateToIso(itDate);
+  const date = document.getElementById("date").value;
   const ownerName = document.getElementById("breadOwner").value.trim();
   const bread = document.getElementById("breadType").value.trim();
   const breadTimeSlot = document.getElementById("breadTimeSlot").value;
@@ -819,7 +816,7 @@ document.getElementById("breadForm").addEventListener("submit", async e => {
             notes,
             // bread,
             numBreakfasts,
-            date: itDateToIso(document.getElementById("date").value),
+            date: document.getElementById("date").value,
             completed 
           });
 
@@ -844,92 +841,33 @@ document.getElementById("breadForm").addEventListener("submit", async e => {
   }
 
   // Gestione cambio data
-document.getElementById("date").addEventListener("change", () => {
-  const selectedDate = document.getElementById("date").value;
-  updateSelectedDate(selectedDate);
-  renderActiveDays();
-});
+  document.getElementById("date").addEventListener("change", () => {
+    const selectedDate = document.getElementById("date").value;
+    document.getElementById("formDateDesc").textContent = `Data selezionata: ${selectedDate.split("-").reverse().join("/")}`;
+    renderList();
+    renderActiveDays();
+  });
 
-
-
-async function initSynchronizedCalendars() {
-  const activeDatesSet = await getActiveDatesSet();
-
-  function highlightActiveDaysOnCalendar(date, dayElem) {
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const dd = String(date.getDate()).padStart(2, '0');
-    const dateStr = `${yyyy}-${mm}-${dd}`;
-
-    if (activeDatesSet.has(dateStr)) {
-      dayElem.style.backgroundColor = '#c8e6c9'; // verde chiaro
-      dayElem.style.borderRadius = '50%';
-    }
-  }
-
-  let syncing = false;
-
-  if (window.breadDatePicker) window.breadDatePicker.destroy();
-if (window.breakfastDatePicker) window.breakfastDatePicker.destroy();
+  // Carica pagina
+  window.addEventListener("load", () => {
+    setToday();
+    renderList();
+    renderActiveDays();
+    flatpickr.localize(flatpickr.l10ns.it);
 
 window.breadDatePicker = flatpickr("#breadDate", {
-  dateFormat: "d-m-Y",  // <-- formato visivo italiano
+  dateFormat: "Y-m-d",
   defaultDate: new Date(),
-  locale: "it",
-  onDayCreate: function(dObj, dStr, fp, dayElem) {
-    highlightActiveDaysOnCalendar(dayElem.dateObj, dayElem);
-  },
-  onChange: function(selectedDates, dateStr) {
-    if (syncing) return;
-    syncing = true;
-
-    if (window.breakfastDatePicker && window.breakfastDatePicker.input.value !== dateStr) {
-      window.breakfastDatePicker.setDate(dateStr, true);
-    }
-
-    const isoDateStr = itDateToIso(dateStr);  // <-- converto in ISO
-    updateSelectedDate(isoDateStr);
-
-    syncing = false;
-  }
+  locale: "it"
 });
 
 window.breakfastDatePicker = flatpickr("#breakfastDate", {
-  dateFormat: "d-m-Y",  // <-- formato visivo italiano
+  dateFormat: "Y-m-d",
   defaultDate: new Date(),
-  locale: "it",
-  onDayCreate: function(dObj, dStr, fp, dayElem) {
-    highlightActiveDaysOnCalendar(dayElem.dateObj, dayElem);
-  },
-  onChange: function(selectedDates, dateStr) {
-    if (syncing) return;
-    syncing = true;
-
-    if (window.breadDatePicker && window.breadDatePicker.input.value !== dateStr) {
-      window.breadDatePicker.setDate(dateStr, true);
-    }
-
-    const isoDateStr = itDateToIso(dateStr);  // <-- converto in ISO
-    updateSelectedDate(isoDateStr);
-
-    syncing = false;
-  }
+  locale: "it"
 });
 
-
-}
-
-
-
-  // Carica pagina
-  window.addEventListener("load", async () => {
-  flatpickr.localize(flatpickr.l10ns.it);
-  await initSynchronizedCalendars();
-
-  setToday();
-  renderList();
-  renderActiveDays();
-});
+  });
 
 async function toggleCompleted(id, currentlyCompleted) {
   if (currentlyCompleted) {
@@ -988,32 +926,6 @@ window.addEventListener('load', async () => {
 });
 
 
-function updateSelectedDate(dateStr) {
-  // dateStr è in formato ISO YYYY-MM-DD
-  document.getElementById("date").value = isoToItDate(dateStr);  // metto italiano nell’input hidden o visibile
-
-  const [yyyy, mm, dd] = dateStr.split("-");
-  document.getElementById("formDateDesc").textContent = `Data selezionata: ${dd}/${mm}/${yyyy}`;
-
-  highlightSelectedDay(dateStr);
-  renderList();
-}
-
-
-// Converte da ISO (YYYY-MM-DD) a italiano (DD-MM-YYYY)
-function isoToItDate(isoDate) {
-  if (!isoDate) return "";
-  const [yyyy, mm, dd] = isoDate.split("-");
-  return `${dd}-${mm}-${yyyy}`;
-}
-
-// Converte da italiano (DD-MM-YYYY) a ISO (YYYY-MM-DD)
-function itDateToIso(itDate) {
-  if (!itDate) return "";
-  const [dd, mm, yyyy] = itDate.split("-");
-  return `${yyyy}-${mm}-${dd}`;
-}
-
 
 </script>
 </body>
@@ -1032,5 +944,6 @@ function itDateToIso(itDate) {
 Manca ancora sincronizzazione tra i calendari laterali
 Manca il formato gg-mm-aaaa
 Selezionando le date nei calendari laterali non si attiva il salvataggio delle prenotazioni
+
 
 -->
