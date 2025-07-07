@@ -143,7 +143,7 @@
     }
     #activeDaysContainer button {
       width: auto;
-      padding: 0.3rem 0.6rem;
+      padding: 0.3rem 0.3rem;
       border: 1px solid #f0e9dc;
       background: #fffaf0;
       border-radius: 6px;
@@ -154,6 +154,7 @@
       display: inline-flex;
       align-items: center;
       white-space: nowrap;
+      margin-bottom: 0.1rem;
     }
     #activeDaysContainer button.selected {
       background-color: var(--accent);
@@ -232,8 +233,7 @@
 
   <div class="header-bar" style="flex-direction: row; align-items: center; justify-content: space-between;">
     <h1 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">🍴 Prenotazioni colazione</h1>
-    <label for="date" style="background-color: #fffaf0; color: #555; padding: 0.3rem 0.6rem; border-radius: 6px; font-weight: 600; font-size: 1rem; display: flex; align-items: center; gap: 0.3rem; cursor: pointer; user-select: none;">
-      <img src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png" alt="calendario" style="width: 18px; height: 18px;" />
+    <label for="date" style="display:none;">
       <input type="date" id="date" style="border: none; background: transparent; color: #555; font-size: 1rem; cursor: pointer; padding: 0; margin: 0; width: auto;" />
     </label>
   </div>
@@ -263,6 +263,20 @@
         <label style="margin-top: 1rem;">Tipo di pane
           <input type="text" id="breadType" placeholder="Tipo di pane" required />
         </label>
+                <label>Fascia Oraria
+          <select id="breadTimeSlot" required>
+            <option value="07:30">07:30</option>
+            <option value="08:00">08:00</option>
+            <option value="08:30">08:30</option>
+            <option value="09:00">09:00</option>
+            <option value="09:30">09:30</option>
+            <option value="10:00">10:00</option>
+            <option value="10:30">10:30</option>
+            <option value="11:00">11:00</option>
+            <option value="11:30">11:30</option>
+          </select>
+        </label>
+
         <button type="submit" style="margin-top: 1rem;">Aggiungi Prenotazione Pane</button>
       </form>
     </div>
@@ -319,11 +333,11 @@
             <option value="11:30">11:30</option>
           </select>
         </label>
-
+<!--
         <label style="margin-top: 1rem;">Pane 🥖
           <input type="text" id="bread" placeholder="Tipo di pane (opzionale)" />
         </label>
-
+-->
         <label style="margin-top: 1rem;">Note (opzionale)
           <textarea id="notes"></textarea>
         </label>
@@ -384,6 +398,11 @@
     return results;
   }
 
+  async function getActiveDatesSet() {
+  const allData = await getAllData();
+  return new Set(allData.map(b => b.date));
+}
+
   // Aggiungi prenotazione
   async function addEntry(data) {
     await addDoc(bookingsCol, data);
@@ -413,106 +432,110 @@ function closeEditModal() {
 }
 
   // Renderizza lista prenotazioni per data
-  async function renderList() {
-    const list = document.getElementById("breakfastList");
-    const date = document.getElementById("breadDate").value;
-    const data = await getData(date);
-    const summary = document.getElementById("summary");
+ async function renderList() {
+  const list = document.getElementById("breakfastList");
+  const breadOnlyList = document.getElementById("breadOnlyList");
+  const date = document.getElementById("breadDate").value;  // o meglio usare un solo campo data condiviso
+  const data = await getData(date);
 
-    const totalBreakfasts = data.reduce((s, b) => s + b.numBreakfasts, 0);
-    summary.textContent = `Panoramica per ${date.split("-").reverse().join("/")}. Colazioni Totali: ${totalBreakfasts}`;
+  // Separiamo prenotazioni pane e colazione
+  const onlyBreadBookings = data.filter(b => b.breadOnly === true);
+  const breakfastBookings = data.filter(b => !b.breadOnly);
 
-    list.innerHTML = "";
-    const slots = ["07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30"];
-    const maxPerSlot = 15;
+  // Riassunto colazioni
+  const totalBreakfasts = breakfastBookings.reduce((s, b) => s + b.numBreakfasts, 0);
+  const summary = document.getElementById("summary");
+  summary.textContent = `Panoramica per ${date.split("-").reverse().join("/")}. Colazioni Totali: ${totalBreakfasts}`;
 
-    slots.forEach((slot, i) => {
-      const bookings = data.filter(b => b.timeSlot === slot);
-      if (bookings.length > 0) {
-        const totalBooked = bookings.reduce((sum, b) => sum + b.numBreakfasts, 0);
-        const remaining = maxPerSlot - totalBooked;
-        const prenotataText = totalBooked === 1 ? "prenotata" : "prenotate";
-        let nextSlot = slots[i + 1] || slot;
+  list.innerHTML = "";
+  breadOnlyList.innerHTML = "";
 
-        const slotDiv = document.createElement("div");
-        slotDiv.className = "booking-card";
+  const slots = ["07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30"];
+  const maxPerSlot = 15;
 
-        slotDiv.innerHTML = `
-          <h3>${slot} - ${nextSlot}</h3>
-          <span>${totalBooked} ${prenotataText} / ${remaining} rimanenti</span>
-          <div class="progress-bar" style="
-            background-color: ${remaining === 0 ? 'red' : 'green'};
-            height: 12px;
-            border-radius: 6px;
-            margin-top: 6px;
-            width: ${(totalBooked / maxPerSlot) * 100}%;
-            transition: width 0.3s ease;"></div>
+  slots.forEach((slot, i) => {
+    const bookings = breakfastBookings.filter(b => b.timeSlot === slot);
+    if (bookings.length > 0) {
+      const totalBooked = bookings.reduce((sum, b) => sum + b.numBreakfasts, 0);
+      const remaining = maxPerSlot - totalBooked;
+      const prenotataText = totalBooked === 1 ? "prenotata" : "prenotate";
+      let nextSlot = slots[i + 1] || slot;
+
+      const slotDiv = document.createElement("div");
+      slotDiv.className = "booking-card";
+
+      slotDiv.innerHTML = `
+        <h3>${slot} - ${nextSlot}</h3>
+        <span>${totalBooked} ${prenotataText} / ${remaining} rimanenti</span>
+        <div class="progress-bar" style="
+          background-color: ${remaining === 0 ? 'red' : 'green'};
+          height: 12px;
+          border-radius: 6px;
+          margin-top: 6px;
+          width: ${(totalBooked / maxPerSlot) * 100}%;
+          transition: width 0.3s ease;"></div>
+      `;
+
+      const bookingsContainer = document.createElement("div");
+      bookingsContainer.style.marginTop = "1rem";
+      bookingsContainer.style.display = "flex";
+      bookingsContainer.style.flexDirection = "column";
+      bookingsContainer.style.gap = "0.5rem";
+
+      bookings.forEach(b => {
+        const subCard = document.createElement("div");
+        subCard.style.padding = "0.6rem 1rem";
+        subCard.style.borderRadius = "8px";
+        subCard.style.boxShadow = "inset 0 0 5px rgba(0,0,0,0.05)";
+        subCard.style.backgroundColor = b.completed ? "#d3d3d3" : "#fffaf0";
+        if(b.completed) {
+          subCard.classList.add("booking-completed");
+        }
+        subCard.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; font-weight: bold;">
+            ${b.ownerName}
+            <div class="actions" style="display: flex; gap: 0.5rem;">
+              <span class="delete-button" onclick="editEntry('${b.id}')" title="Modifica">✏️</span>
+              <span class="delete-button" onclick="deleteEntry('${b.id}')" title="Elimina">🗑️</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.3rem; font-size: 0.95rem;">
+            <span>🍽️ ${b.numBreakfasts}</span>
+            <span>👤 ${b.numAdults}</span>
+            ${b.numChildren > 0 ? `<span>👶 ${b.numChildren}</span>` : ""}
+            ${b.numSeats > 0 ? `<span>🪑 ${b.numSeats}</span>` : ""}
+          </div>
+          <button style="margin-top:0.8rem; padding:0.3rem 0.6rem; border:none; border-radius:6px; background-color: ${b.completed ? '#6c757d' : '#94d3ac'}; color:white; cursor:pointer;" 
+            onclick="toggleCompleted('${b.id}', ${b.completed})">
+            ${b.completed ? 'Riapri' : 'Completata'}
+          </button>
+            ${b.notes ? `<div style="margin-top: 0.3rem; font-style: italic; color: var(--muted); font-size: 0.9rem;">📝 ${b.notes}</div>` : ""}
         `;
 
-        const bookingsContainer = document.createElement("div");
-        bookingsContainer.style.marginTop = "1rem";
-        bookingsContainer.style.display = "flex";
-        bookingsContainer.style.flexDirection = "column";
-        bookingsContainer.style.gap = "0.5rem";
-
-        bookings.forEach(b => {
-          const subCard = document.createElement("div");
-          subCard.style.padding = "0.6rem 1rem";
-          subCard.style.borderRadius = "8px";
-          subCard.style.boxShadow = "inset 0 0 5px rgba(0,0,0,0.05)";
-          subCard.style.backgroundColor = b.completed ? "#d3d3d3" : "#fffaf0";
-          if(b.completed) {
-            subCard.classList.add("booking-completed");
-          }
-          subCard.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; font-weight: bold;">
-              ${b.ownerName}
-              <div class="actions" style="display: flex; gap: 0.5rem;">
-                <span class="delete-button" onclick="editEntry('${b.id}')" title="Modifica">✏️</span>
-                <span class="delete-button" onclick="deleteEntry('${b.id}')" title="Elimina">🗑️</span>
-              </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.3rem; font-size: 0.95rem;">
-              <span>🍽️ ${b.numBreakfasts}</span>
-              <span>👤 ${b.numAdults}</span>
-              <span>👶 ${b.numChildren}</span>
-              ${b.numSeats > 0 ? `<span>🪑 ${b.numSeats}</span>` : ""}
-            </div>
-            <button style="margin-top:0.8rem; padding:0.3rem 0.6rem; border:none; border-radius:6px; background-color: ${b.completed ? '#6c757d' : '#94d3ac'}; color:white; cursor:pointer;" 
-              onclick="toggleCompleted('${b.id}', ${b.completed})">
-              ${b.completed ? 'Riapri' : 'Completata'}
-            </button>
-            ${b.bread ? `<div style="margin-top: 0.3rem; font-style: italic; color: var(--muted); font-size: 0.9rem;">🥖 ${b.bread}</div>` : ""}
-            ${b.notes ? `<div style="margin-top: 0.3rem; font-style: italic; color: var(--muted); font-size: 0.9rem;">📝 ${b.notes}</div>` : ""}
-          `;
-
-          bookingsContainer.appendChild(subCard);
-        });
-
-        slotDiv.appendChild(bookingsContainer);
-        list.appendChild(slotDiv);
-      }
-      // RENDER PRENOTAZIONI SOLO PANE
-      const breadOnlyList = document.getElementById("breadOnlyList");
-      breadOnlyList.innerHTML = "";
-
-      const onlyBreadBookings = data.filter(b => b.breadOnly);
-      onlyBreadBookings.forEach(b => {
-        const paneDiv = document.createElement("div");
-        paneDiv.style.background = "#fdf6ee";
-        paneDiv.style.padding = "0.6rem 1rem";
-        paneDiv.style.borderRadius = "8px";
-        paneDiv.style.marginBottom = "0.5rem";
-        paneDiv.style.boxShadow = "inset 0 0 3px rgba(0,0,0,0.05)";
-        paneDiv.innerHTML = `<strong>${b.ownerName}</strong> — 🥖 ${b.bread}`;
-        breadOnlyList.appendChild(paneDiv);
+        bookingsContainer.appendChild(subCard);
       });
 
-      
-    });
-  }
+      slotDiv.appendChild(bookingsContainer);
+      list.appendChild(slotDiv);
+    }
+  });
+
+  // Render prenotazioni solo pane
+  onlyBreadBookings.forEach(b => {
+    const paneDiv = document.createElement("div");
+    paneDiv.style.background = "#fdf6ee";
+    paneDiv.style.padding = "0.6rem 1rem";
+    paneDiv.style.borderRadius = "8px";
+    paneDiv.style.marginBottom = "0.5rem";
+    paneDiv.style.boxShadow = "inset 0 0 3px rgba(0,0,0,0.05)";
+    paneDiv.innerHTML = `<strong>${b.ownerName}</strong> — 🥖 ${b.bread} — <em>${b.timeSlot || "Orario non specificato"}</em>`;
+    breadOnlyList.appendChild(paneDiv);
+  });
+}
+
 
   // Renderizza giorni con prenotazioni attive (bottone)
+// Renderizza giorni con prenotazioni attive (bottone)
 async function renderActiveDays() {
   const container = document.getElementById("activeDaysContainer");
   const allData = await getAllData();
@@ -521,44 +544,60 @@ async function renderActiveDays() {
   container.innerHTML = "";
 
   const today = new Date();
-  for (let i = 0; i < 28; i++) {
-    const date = new Date(today);
-    date.setDate(today.getDate() + i);
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const dd = String(date.getDate()).padStart(2, '0');
-    const dateStr = `${yyyy}-${mm}-${dd}`;
+  const dayOfWeek = today.getDay(); // 0 (dom) - 6 (sab)
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Se domenica, vai indietro di 6
 
-    const dayNames = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
-    const dayName = dayNames[date.getDay()];
+  const startDate = new Date(today);
+  startDate.setDate(today.getDate() + mondayOffset); // Lunedì corrente
 
-    const btn = document.createElement("button");
-    btn.textContent = `${dayName} ${dd}/${mm}`;
-    btn.dataset.date = dateStr;
+  const dayNames = ['lun', 'mar', 'mer', 'gio', 'ven', 'sab', 'dom'];
 
-    if (daysSet.has(dateStr)) {
-      btn.style.backgroundColor = "#c8e6c9"; // verde chiaro
-      btn.style.borderColor = "#a5d6a7";
+  for (let week = 0; week < 3; week++) {
+    const row = document.createElement("div");
+    row.style.display = "flex";
+    row.style.gap = "0.5rem";
+    row.style.marginBottom = "0.1rem";
+
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + week * 7 + i);
+
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      const dateStr = `${yyyy}-${mm}-${dd}`;
+
+      const btn = document.createElement("button");
+      btn.textContent = `${dayNames[i]} ${dd}/${mm}`;
+      btn.dataset.date = dateStr;
+      btn.style.border = "1px solid #999";
+
+      if (daysSet.has(dateStr)) {
+        btn.style.backgroundColor = "#c8e6c9"; // verde chiaro
+        btn.style.borderColor = "#a5d6a7";
+      }
+
+      btn.onclick = () => {
+        document.getElementById("date").value = dateStr;
+        document.getElementById("date").dispatchEvent(new Event('change'));
+
+        if (window.breadDatePicker) window.breadDatePicker.setDate(dateStr, true);
+        if (window.breakfastDatePicker) window.breakfastDatePicker.setDate(dateStr, true);
+
+        renderList();
+        highlightSelectedDay(dateStr);
+        document.getElementById("formDateDesc").textContent = `Data selezionata: ${dd}/${mm}/${yyyy}`;
+      };
+
+      row.appendChild(btn);
     }
 
-    btn.onclick = () => {
-      document.getElementById("date").value = dateStr;
-      
-      // Aggiorna anche i due flatpickr
-      if (window.breadDatePicker) window.breadDatePicker.setDate(dateStr, true);
-      if (window.breakfastDatePicker) window.breakfastDatePicker.setDate(dateStr, true);
-
-      renderList();
-      highlightSelectedDay(dateStr);
-      document.getElementById("formDateDesc").textContent = `Data selezionata: ${dd}/${mm}/${yyyy}`;
-    };
-
-
-    container.appendChild(btn);
+    container.appendChild(row);
   }
 
   highlightSelectedDay(document.getElementById("date").value);
 }
+
 
 function highlightSelectedDay(day) {
   const buttons = document.querySelectorAll("#activeDaysContainer button");
@@ -582,13 +621,14 @@ function highlightSelectedDay(day) {
   document.getElementById("breakfastForm").addEventListener("submit", async e => {
     e.preventDefault();
 
-    const date = document.getElementById("breakfastDate").value;
+    const itDate = document.getElementById("breakfastDate").value;
+    const date = itDateToIso(itDate);
     const ownerName = document.getElementById("ownerName").value.trim();
     const numAdults = Number(document.getElementById("numAdults").value);
     const numChildren = Number(document.getElementById("numChildren").value);
     const timeSlot = document.getElementById("timeSlot").value;
     const notes = document.getElementById("notes").value.trim();
-    const bread = document.getElementById("bread").value.trim();
+    // const bread = document.getElementById("bread").value.trim();
     const numSeats = Number(document.getElementById("numSeats").value);
     const numBreakfasts = calcBreakfasts(numAdults, numChildren);
 
@@ -600,7 +640,7 @@ function highlightSelectedDay(day) {
     }
 
     try {
-      await addEntry({ date, ownerName, numAdults, numChildren, timeSlot, notes, bread, numBreakfasts, completed: false });
+      await addEntry({ date, ownerName, numAdults, numChildren, timeSlot, notes, numBreakfasts, completed: false });
       e.target.reset();
       renderList();
       renderActiveDays();
@@ -613,9 +653,11 @@ function highlightSelectedDay(day) {
 document.getElementById("breadForm").addEventListener("submit", async e => {
   e.preventDefault();
 
-  const date = document.getElementById("date").value;
+  const itDate = document.getElementById("date").value;
+  const date = itDateToIso(itDate);
   const ownerName = document.getElementById("breadOwner").value.trim();
   const bread = document.getElementById("breadType").value.trim();
+  const breadTimeSlot = document.getElementById("breadTimeSlot").value;
 
   if (!date || !ownerName || !bread) {
     alert("Compila correttamente i campi.");
@@ -628,7 +670,7 @@ document.getElementById("breadForm").addEventListener("submit", async e => {
       ownerName,
       numAdults: 0,
       numChildren: 0,
-      timeSlot: "",
+      timeSlot: breadTimeSlot,
       bread,
       notes: "",
       numBreakfasts: 0,
@@ -754,7 +796,7 @@ document.getElementById("breadForm").addEventListener("submit", async e => {
       const numChildren = Number(document.getElementById("editNumChildren").value);
       const timeSlot = document.getElementById("editTimeSlot").value;
       const notes = document.getElementById("editNotes").value.trim();
-      const bread = document.getElementById("editBread").value.trim();
+      // const bread = document.getElementById("editBread").value.trim();
       const numSeats = Number(document.getElementById("editNumSeats").value);
       const numBreakfasts = calcBreakfasts(numAdults, numChildren);
 
@@ -775,10 +817,10 @@ document.getElementById("breadForm").addEventListener("submit", async e => {
             numChildren,
             timeSlot,
             notes,
-            bread,
+            // bread,
             numBreakfasts,
-            date: document.getElementById("date").value,
-            completed // lo reinserisci
+            date: itDateToIso(document.getElementById("date").value),
+            completed 
           });
 
         modal.style.display = "none";
@@ -802,33 +844,92 @@ document.getElementById("breadForm").addEventListener("submit", async e => {
   }
 
   // Gestione cambio data
-  document.getElementById("date").addEventListener("change", () => {
-    const selectedDate = document.getElementById("date").value;
-    document.getElementById("formDateDesc").textContent = `Data selezionata: ${selectedDate.split("-").reverse().join("/")}`;
-    renderList();
-    renderActiveDays();
-  });
+document.getElementById("date").addEventListener("change", () => {
+  const selectedDate = document.getElementById("date").value;
+  updateSelectedDate(selectedDate);
+  renderActiveDays();
+});
 
-  // Carica pagina
-  window.addEventListener("load", () => {
-    setToday();
-    renderList();
-    renderActiveDays();
-    flatpickr.localize(flatpickr.l10ns.it);
+
+
+async function initSynchronizedCalendars() {
+  const activeDatesSet = await getActiveDatesSet();
+
+  function highlightActiveDaysOnCalendar(date, dayElem) {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${yyyy}-${mm}-${dd}`;
+
+    if (activeDatesSet.has(dateStr)) {
+      dayElem.style.backgroundColor = '#c8e6c9'; // verde chiaro
+      dayElem.style.borderRadius = '50%';
+    }
+  }
+
+  let syncing = false;
+
+  if (window.breadDatePicker) window.breadDatePicker.destroy();
+if (window.breakfastDatePicker) window.breakfastDatePicker.destroy();
 
 window.breadDatePicker = flatpickr("#breadDate", {
-  dateFormat: "Y-m-d",
+  dateFormat: "d-m-Y",  // <-- formato visivo italiano
   defaultDate: new Date(),
-  locale: "it"
+  locale: "it",
+  onDayCreate: function(dObj, dStr, fp, dayElem) {
+    highlightActiveDaysOnCalendar(dayElem.dateObj, dayElem);
+  },
+  onChange: function(selectedDates, dateStr) {
+    if (syncing) return;
+    syncing = true;
+
+    if (window.breakfastDatePicker && window.breakfastDatePicker.input.value !== dateStr) {
+      window.breakfastDatePicker.setDate(dateStr, true);
+    }
+
+    const isoDateStr = itDateToIso(dateStr);  // <-- converto in ISO
+    updateSelectedDate(isoDateStr);
+
+    syncing = false;
+  }
 });
 
 window.breakfastDatePicker = flatpickr("#breakfastDate", {
-  dateFormat: "Y-m-d",
+  dateFormat: "d-m-Y",  // <-- formato visivo italiano
   defaultDate: new Date(),
-  locale: "it"
+  locale: "it",
+  onDayCreate: function(dObj, dStr, fp, dayElem) {
+    highlightActiveDaysOnCalendar(dayElem.dateObj, dayElem);
+  },
+  onChange: function(selectedDates, dateStr) {
+    if (syncing) return;
+    syncing = true;
+
+    if (window.breadDatePicker && window.breadDatePicker.input.value !== dateStr) {
+      window.breadDatePicker.setDate(dateStr, true);
+    }
+
+    const isoDateStr = itDateToIso(dateStr);  // <-- converto in ISO
+    updateSelectedDate(isoDateStr);
+
+    syncing = false;
+  }
 });
 
-  });
+
+}
+
+
+
+  // Carica pagina
+  window.addEventListener("load", async () => {
+  flatpickr.localize(flatpickr.l10ns.it);
+  await initSynchronizedCalendars();
+
+  setToday();
+  renderList();
+  renderActiveDays();
+});
 
 async function toggleCompleted(id, currentlyCompleted) {
   if (currentlyCompleted) {
@@ -842,6 +943,94 @@ async function toggleCompleted(id, currentlyCompleted) {
 window.toggleCompleted = toggleCompleted;
 
 
+async function setupFlatpickrWithActiveDays() {
+  const activeDatesSet = await getActiveDatesSet();
+
+  function highlightActiveDaysOnCalendar(date, dayElem) {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${yyyy}-${mm}-${dd}`;
+
+    if (activeDatesSet.has(dateStr)) {
+      dayElem.style.backgroundColor = '#c8e6c9'; // verde chiaro
+      dayElem.style.borderRadius = '50%';
+    }
+  }
+
+  if(window.breadDatePicker) {
+    window.breadDatePicker.destroy();
+  }
+  window.breadDatePicker = flatpickr("#breadDate", {
+    dateFormat: "Y-m-d",
+    defaultDate: new Date(),
+    locale: "it",
+    onDayCreate: function(dObj, dStr, fp, dayElem) {
+      highlightActiveDaysOnCalendar(dayElem.dateObj, dayElem);
+    }
+  });
+
+  if(window.breakfastDatePicker) {
+    window.breakfastDatePicker.destroy();
+  }
+  window.breakfastDatePicker = flatpickr("#breakfastDate", {
+    dateFormat: "Y-m-d",
+    defaultDate: new Date(),
+    locale: "it",
+    onDayCreate: function(dObj, dStr, fp, dayElem) {
+      highlightActiveDaysOnCalendar(dayElem.dateObj, dayElem);
+    }
+  });
+}
+
+window.addEventListener('load', async () => {
+  await setupFlatpickrWithActiveDays();
+});
+
+
+function updateSelectedDate(dateStr) {
+  // dateStr è in formato ISO YYYY-MM-DD
+  document.getElementById("date").value = isoToItDate(dateStr);  // metto italiano nell’input hidden o visibile
+
+  const [yyyy, mm, dd] = dateStr.split("-");
+  document.getElementById("formDateDesc").textContent = `Data selezionata: ${dd}/${mm}/${yyyy}`;
+
+  highlightSelectedDay(dateStr);
+  renderList();
+}
+
+
+// Converte da ISO (YYYY-MM-DD) a italiano (DD-MM-YYYY)
+function isoToItDate(isoDate) {
+  if (!isoDate) return "";
+  const [yyyy, mm, dd] = isoDate.split("-");
+  return `${dd}-${mm}-${yyyy}`;
+}
+
+// Converte da italiano (DD-MM-YYYY) a ISO (YYYY-MM-DD)
+function itDateToIso(itDate) {
+  if (!itDate) return "";
+  const [dd, mm, yyyy] = itDate.split("-");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+
 </script>
 </body>
 </html>
+
+
+
+<!-- 
+
+10.44 tolti bambini
+10.56 tolto il pane dalle colazioni
+11.06 aggiunta orari pane
+12.24 7 pulsanti per riga
+11.36 aggiunto sfondo verde nei calendari
+
+Manca ancora sincronizzazione tra i calendari laterali
+Manca il formato gg-mm-aaaa
+Selezionando le date nei calendari laterali non si attiva il salvataggio delle prenotazioni
+
+-->
