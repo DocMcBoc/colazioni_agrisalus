@@ -541,20 +541,18 @@ async function renderActiveDays() {
       btn.style.borderColor = "#a5d6a7";
     }
 
-      btn.onclick = () => {
-        document.getElementById("date").value = dateStr;
+    btn.onclick = () => {
+      document.getElementById("date").value = dateStr;
+      
+      // Aggiorna anche i due flatpickr
+      if (window.breadDatePicker) window.breadDatePicker.setDate(dateStr, true);
+      if (window.breakfastDatePicker) window.breakfastDatePicker.setDate(dateStr, true);
 
-        // Imposta anche le date nei form prenotazione colazioni e pane
-        document.getElementById("breakfastDate")._flatpickr.setDate(dateStr);
-        document.getElementById("breadDate")._flatpickr.setDate(dateStr);
+      renderList();
+      highlightSelectedDay(dateStr);
+      document.getElementById("formDateDesc").textContent = `Data selezionata: ${dd}/${mm}/${yyyy}`;
+    };
 
-        renderList();
-        highlightSelectedDay(dateStr);
-
-        // Aggiorna descrizione sotto il form colazione
-        document.getElementById("formDateDesc").textContent = `Data selezionata: ${dd}/${mm}/${yyyy}`;
-        document.getElementById("breadDateDesc").textContent = `Data selezionata: ${dd}/${mm}/${yyyy}`;
-      };
 
     container.appendChild(btn);
   }
@@ -818,13 +816,13 @@ document.getElementById("breadForm").addEventListener("submit", async e => {
     renderActiveDays();
     flatpickr.localize(flatpickr.l10ns.it);
 
-flatpickr("#breadDate", {
+window.breadDatePicker = flatpickr("#breadDate", {
   dateFormat: "Y-m-d",
   defaultDate: new Date(),
   locale: "it"
 });
 
-flatpickr("#breakfastDate", {
+window.breakfastDatePicker = flatpickr("#breakfastDate", {
   dateFormat: "Y-m-d",
   defaultDate: new Date(),
   locale: "it"
