@@ -684,7 +684,7 @@ function highlightSelectedDay(day) {
       await addEntry({ 
   date, ownerName, numAdults, numChildren, numSeats, timeSlot, notes, numBreakfasts, completed: false 
 });
-
+    e.target.reset();
       renderList();
       renderActiveDays();
     } catch (err) {
