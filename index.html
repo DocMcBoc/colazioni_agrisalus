@@ -451,6 +451,11 @@ function closeEditModal() {
   list.innerHTML = "";
   breadOnlyList.innerHTML = "";
 
+  // Aggiunta per due schede per riga
+  // list.style.display = "flex";
+  // list.style.flexWrap = "wrap";
+  // list.style.gap = "1rem";
+
   const slots = ["07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30"];
   const maxPerSlot = 15;
 
@@ -464,6 +469,10 @@ function closeEditModal() {
 
       const slotDiv = document.createElement("div");
       slotDiv.className = "booking-card";
+
+      // Modifica per larghezza e flex
+      // slotDiv.style.flex = "0 0 48%";
+      // slotDiv.style.boxSizing = "border-box";
 
       slotDiv.innerHTML = `
         <h3>${slot} - ${nextSlot}</h3>
@@ -495,13 +504,20 @@ function closeEditModal() {
         subCard.innerHTML = `
         <div style="font-weight: bold; margin-bottom: 0.3rem;">
           ${b.ownerName}
-        </div>
-          <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.3rem; font-size: 0.95rem;">
-            <span>🍽️ ${b.numBreakfasts}</span>
-            <span>👤 ${b.numAdults}</span>
-            ${b.numChildren > 0 ? `<span>👶 ${b.numChildren}</span>` : ""}
-            ${b.numSeats > 0 ? `<span>🪑 ${b.numSeats}</span>` : ""}
+        <div style="
+            display: flex; 
+            align-items: center; 
+            gap: 0.6rem; 
+            margin-top: 0.3rem; 
+            font-size: 0.95rem; 
+            white-space: nowrap;
+            min-width: 140px;">
+            <span style="display:flex; align-items:center; gap: 0.15rem;">🍽️ <strong>${b.numBreakfasts}</strong></span>
+            <span style="display:flex; align-items:center; gap: 0.15rem;">👤 <strong>${b.numAdults}</strong></span>
+            ${b.numChildren > 0 ? `<span style="display:flex; align-items:center; gap: 0.15rem;">👶 <strong>${b.numChildren}</strong></span>` : ""}
+            ${b.numSeats > 0 ? `<span style="display:flex; align-items:center; gap: 0.15rem;">🪑 <strong>${b.numSeats}</strong></span>` : ""}
           </div>
+
         <div class="actions" style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
           <span class="delete-button" onclick="editEntry('${b.id}')" title="Modifica" style="cursor:pointer;">✏️</span>
           <span class="delete-button" onclick="deleteEntry('${b.id}')" title="Elimina" style="cursor:pointer;">🗑️</span>
@@ -1211,6 +1227,7 @@ function createDuplicateBreadModal() {
 17.19 sistemato salvataggio seggiolini
 19.40 duplica colazione
 19.54 duplica pane
+20.15 numeri ed icone sempre in linea
 
 Manca il formato gg-mm-aaaa
 
