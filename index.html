@@ -340,11 +340,6 @@
             <option value="11:30">11:30</option>
           </select>
         </label>
-<!--
-        <label style="margin-top: 1rem;">Pane 
-          <input type="text" id="bread" placeholder="Tipo di pane (opzionale)" />
-        </label>
--->
         <label style="margin-top: 1rem;">Note (opzionale)
           <textarea id="notes"></textarea>
         </label>
@@ -883,18 +878,27 @@ document.getElementById("breadForm").addEventListener("submit", async e => {
     renderActiveDays();
     flatpickr.localize(flatpickr.l10ns.it);
 
+function onCalendarDateChange(selectedDates, dateStr) {
+  document.getElementById("date").value = dateStr;
+
+  renderList();
+  highlightSelectedDay(dateStr);
+  document.getElementById("formDateDesc").textContent = `Data selezionata: ${dateStr.split("-").reverse().join("/")}`;
+}
+
 window.breadDatePicker = flatpickr("#breadDate", {
   dateFormat: "Y-m-d",
   defaultDate: new Date(),
-  locale: "it"
+  locale: "it",
+  onChange: onCalendarDateChange
 });
 
 window.breakfastDatePicker = flatpickr("#breakfastDate", {
   dateFormat: "Y-m-d",
   defaultDate: new Date(),
-  locale: "it"
+  locale: "it",
+  onChange: onCalendarDateChange
 });
-
   });
 
 async function toggleCompleted(id, currentlyCompleted) {
@@ -975,10 +979,8 @@ window.addEventListener('load', async () => {
 08/07
 15.22 Eliminato simbolo pane
 15.22 Aggiunte icone modifica/elimina al pane
+16.00 i calendari sono sincronizzati e permettono le prenotazioni
 
-Manca ancora sincronizzazione tra i calendari laterali
 Manca il formato gg-mm-aaaa
-Selezionando le date nei calendari laterali non si attiva il salvataggio delle prenotazioni
-
 
 -->
