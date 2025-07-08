@@ -341,7 +341,7 @@
           </select>
         </label>
 <!--
-        <label style="margin-top: 1rem;">Pane 🥖
+        <label style="margin-top: 1rem;">Pane 
           <input type="text" id="bread" placeholder="Tipo di pane (opzionale)" />
         </label>
 -->
@@ -527,23 +527,35 @@ function closeEditModal() {
   });
 
   // Render prenotazioni solo pane
-    onlyBreadBookings
-      .sort((a, b) => {
-        // Confronta gli orari come stringhe tipo "07:30" → "0730" → numero
-        const tA = a.timeSlot?.replace(":", "") || "9999";
-        const tB = b.timeSlot?.replace(":", "") || "9999";
-        return Number(tA) - Number(tB);
-      })
-      .forEach(b => {
-        const paneDiv = document.createElement("div");
-        paneDiv.style.background = "#fdf6ee";
-        paneDiv.style.padding = "0.6rem 1rem";
-        paneDiv.style.borderRadius = "8px";
-        paneDiv.style.marginBottom = "0.5rem";
-        paneDiv.style.boxShadow = "inset 0 0 3px rgba(0,0,0,0.05)";
-        paneDiv.innerHTML = `<strong>${b.ownerName}</strong> — 🥖 ${b.bread} — <em>${b.timeSlot || "Orario non specificato"}</em>`;
-        breadOnlyList.appendChild(paneDiv);
-      });
+// Render prenotazioni solo pane
+onlyBreadBookings
+  .sort((a, b) => {
+    const tA = a.timeSlot?.replace(":", "") || "9999";
+    const tB = b.timeSlot?.replace(":", "") || "9999";
+    return Number(tA) - Number(tB);
+  })
+  .forEach(b => {
+    const paneDiv = document.createElement("div");
+    paneDiv.style.background = "#fdf6ee";
+    paneDiv.style.padding = "0.6rem 1rem";
+    paneDiv.style.borderRadius = "8px";
+    paneDiv.style.marginBottom = "0.5rem";
+    paneDiv.style.boxShadow = "inset 0 0 3px rgba(0,0,0,0.05)";
+    paneDiv.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; font-weight: bold;">
+        <span>${b.ownerName}</span>
+        <div class="actions" style="display: flex; gap: 0.5rem;">
+          <span class="delete-button" onclick="editEntry('${b.id}')" title="Modifica" style="cursor: pointer;">✏️</span>
+<span class="delete-button" onclick="deleteEntry('${b.id}')" title="Elimina" style="cursor: pointer;">🗑️</span>
+        </div>
+      </div>
+      <div>
+        <em>${b.bread}</em> — <small>${b.timeSlot || "Orario non specificato"}</small>
+      </div>
+    `;
+    breadOnlyList.appendChild(paneDiv);
+  });
+
 }
 
 
@@ -779,7 +791,7 @@ document.getElementById("breadForm").addEventListener("submit", async e => {
               <option value="11:30">11:30</option>
             </select>
           </label>
-          <label style="margin-top: 1rem;">Pane 🥖
+          <label style="margin-top: 1rem;">Pane
             <input type="text" id="editBread" placeholder="Tipo di pane (opzionale)" />
           </label>
           <label style="margin-top: 1rem;">Note (opzionale)
@@ -951,6 +963,7 @@ window.addEventListener('load', async () => {
 
 <!-- 
 
+07/07
 10.44 tolti bambini
 10.56 tolto il pane dalle colazioni
 11.06 aggiunta orari pane
@@ -958,6 +971,10 @@ window.addEventListener('load', async () => {
 11.36 aggiunto sfondo verde nei calendari
 17.12 prenotazioni pane ordinate per fascia oraria
 17.18 aggiunto azzurro a pulsanti selezionati
+
+08/07
+15.22 Eliminato simbolo pane
+15.22 Aggiunte icone modifica/elimina al pane
 
 Manca ancora sincronizzazione tra i calendari laterali
 Manca il formato gg-mm-aaaa
