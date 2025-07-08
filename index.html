@@ -650,7 +650,7 @@ function highlightSelectedDay(day) {
     const timeSlot = document.getElementById("timeSlot").value;
     const notes = document.getElementById("notes").value.trim();
     // const bread = document.getElementById("bread").value.trim();
-    const numSeats = Number(document.getElementById("numSeats").value);
+    const numSeats = Number(document.getElementById("numSeats").value) || 0;
     const numBreakfasts = calcBreakfasts(numAdults, numChildren);
 
 
@@ -661,8 +661,10 @@ function highlightSelectedDay(day) {
     }
 
     try {
-      await addEntry({ date, ownerName, numAdults, numChildren, timeSlot, notes, numBreakfasts, completed: false });
-      e.target.reset();
+      await addEntry({ 
+  date, ownerName, numAdults, numChildren, numSeats, timeSlot, notes, numBreakfasts, completed: false 
+});
+
       renderList();
       renderActiveDays();
     } catch (err) {
@@ -835,9 +837,9 @@ document.getElementById("breadForm").addEventListener("submit", async e => {
             ownerName,
             numAdults,
             numChildren,
+            numSeats,
             timeSlot,
             notes,
-            // bread,
             numBreakfasts,
             date: document.getElementById("date").value,
             completed 
@@ -980,6 +982,7 @@ window.addEventListener('load', async () => {
 15.22 Eliminato simbolo pane
 15.22 Aggiunte icone modifica/elimina al pane
 16.00 i calendari sono sincronizzati e permettono le prenotazioni
+17.19 sistemato salvataggio seggiolini
 
 Manca il formato gg-mm-aaaa
 
