@@ -449,6 +449,9 @@ function closeEditModal() {
   summary.textContent = `Panoramica per ${date.split("-").reverse().join("/")}. Colazioni Totali: ${totalBreakfasts}`;
 
   list.innerHTML = "";
+  list.style.display = "flex";
+  list.style.flexDirection = "column";
+  list.style.gap = "1.5rem";
   breadOnlyList.innerHTML = "";
 
   // Aggiunta per due schede per riga
@@ -488,9 +491,9 @@ function closeEditModal() {
 
       const bookingsContainer = document.createElement("div");
       bookingsContainer.style.marginTop = "1rem";
-      bookingsContainer.style.display = "flex";
-      bookingsContainer.style.flexDirection = "column";
-      bookingsContainer.style.gap = "0.5rem";
+      bookingsContainer.style.display = "grid";
+      bookingsContainer.style.gridTemplateColumns = "repeat(3, 1fr)";
+      bookingsContainer.style.gap = "0.6rem";
 
       bookings.forEach(b => {
         const subCard = document.createElement("div");
@@ -684,7 +687,12 @@ function highlightSelectedDay(day) {
       await addEntry({ 
   date, ownerName, numAdults, numChildren, numSeats, timeSlot, notes, numBreakfasts, completed: false 
 });
-    e.target.reset();
+      const currentDate = document.getElementById("breakfastDate").value;
+      e.target.reset();
+      document.getElementById("breakfastDate").value = currentDate;
+      if (window.breakfastDatePicker) {
+        window.breakfastDatePicker.setDate(currentDate, true);
+      }
       renderList();
       renderActiveDays();
     } catch (err) {
@@ -720,9 +728,14 @@ document.getElementById("breadForm").addEventListener("submit", async e => {
       breadOnly: true
     });
 
-    e.target.reset();
-    renderList();
-    renderActiveDays();
+      const currentDate = document.getElementById("date").value;
+      e.target.reset();
+      document.getElementById("breadDate").value = currentDate;
+      if (window.breadDatePicker) {
+        window.breadDatePicker.setDate(currentDate, true);
+      }
+      renderList();
+      renderActiveDays();
   } catch (err) {
     alert("Errore nel salvataggio: " + err.message);
   }
@@ -1228,6 +1241,9 @@ function createDuplicateBreadModal() {
 19.40 duplica colazione
 19.54 duplica pane
 20.15 numeri ed icone sempre in linea
+
+09/07
+15.28 fasce orarie incolonnate, prenotazioni in linee da 3
 
 Manca il formato gg-mm-aaaa
 
