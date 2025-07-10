@@ -135,58 +135,60 @@
 
     let unsubscribe = null;
 
-    // Renderizza le prenotazioni in lista
-    function renderBookings(data, list) {
-        list.innerHTML = "";
+function renderBookings(data, list) {
+  list.innerHTML = "";
 
-        const onlyBread = data.every(b => !b.timeSlot || b.timeSlot.trim() === "");
+  // Filtra solo le vere prenotazioni colazione
+  const breakfastBookings = data.filter(b =>
+    b.timeSlot && b.timeSlot.trim() !== "" && b.numBreakfasts && b.numBreakfasts > 0
+  );
 
-        if (data.length === 0 || onlyBread) {
-        list.innerHTML = "<p>Nessuna prenotazione (per ora).</p>";
-        return;
-        }
+  if (breakfastBookings.length === 0) {
+    list.innerHTML = "<p>Nessuna prenotazione (per ora).</p>";
+    return;
+  }
 
-      const slots = ["07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30"];
-      const maxPerSlot = 15;
+  const slots = ["07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30"];
+  const maxPerSlot = 15;
 
-      slots.forEach((slot, i) => {
-        const bookings = data.filter(b => b.timeSlot === slot);
-        if (bookings.length > 0) {
-          const totalBooked = bookings.reduce((sum, b) => sum + b.numBreakfasts, 0);
-          const remaining = maxPerSlot - totalBooked;
-          const prenotataText = totalBooked === 1 ? "prenotata" : "prenotate";
-          let nextSlot = slots[i + 1] || slot;
+  slots.forEach((slot, i) => {
+    const bookings = breakfastBookings.filter(b => b.timeSlot === slot);
+    if (bookings.length > 0) {
+      const totalBooked = bookings.reduce((sum, b) => sum + b.numBreakfasts, 0);
+      const remaining = maxPerSlot - totalBooked;
+      const prenotataText = totalBooked === 1 ? "prenotata" : "prenotate";
+      let nextSlot = slots[i + 1] || slot;
 
-          const slotDiv = document.createElement("div");
-          slotDiv.className = "booking-card";
+      const slotDiv = document.createElement("div");
+      slotDiv.className = "booking-card";
 
-          slotDiv.innerHTML = `
-            <h3>${slot} - ${nextSlot}</h3>
-            <span>${totalBooked} ${prenotataText} / ${remaining} rimanenti</span>
-          `;
+      slotDiv.innerHTML = `
+        <h3>${slot} - ${nextSlot}</h3>
+        <span>${totalBooked} ${prenotataText} / ${remaining} rimanenti</span>
+      `;
 
-          bookings.forEach(b => {
-            const item = document.createElement("div");
-            item.className = "booking-details";
-            const noteText = b.notes || "";
-            const breadText = b.bread || "";
-            item.innerHTML = `
-                <span>🍽️ ${b.numBreakfasts}</span>
-                <span>👤 ${b.numAdults}</span>
-                ${b.numChildren > 0 ? `<span>👶 ${b.numChildren}</span>` : ""}
-                ${b.numSeats > 0 ? `<span>🪑 ${b.numSeats}</span>` : ""}
-                <strong>${b.ownerName}</strong>
-                <br />
-                ${noteText ? `<small>${noteText}</small><br />` : ""}
-                <hr style="border:none; border-bottom: 1px solid #ddd; margin: 0.6rem 0;" />
-            `;
-            slotDiv.appendChild(item);
-          });
-
-          list.appendChild(slotDiv);
-        }
+      bookings.forEach(b => {
+        const item = document.createElement("div");
+        item.className = "booking-details";
+        const noteText = b.notes || "";
+        item.innerHTML = `
+            <span>🍽️ ${b.numBreakfasts}</span>
+            <span>👤 ${b.numAdults}</span>
+            ${b.numChildren > 0 ? `<span>👶 ${b.numChildren}</span>` : ""}
+            ${b.numSeats > 0 ? `<span>🪑 ${b.numSeats}</span>` : ""}
+            <strong>${b.ownerName}</strong>
+            <br />
+            ${noteText ? `<small>${noteText}</small><br />` : ""}
+            <hr style="border:none; border-bottom: 1px solid #ddd; margin: 0.6rem 0;" />
+        `;
+        slotDiv.appendChild(item);
       });
+
+      list.appendChild(slotDiv);
     }
+  });
+}
+
 
     // Renderizza il pane del giorno in base ai dati prenotazioni per la data selezionata
         function renderBreadForDate(data, container) {
@@ -329,3 +331,11 @@ async function renderActiveDays() {
 
 </body>
 </html>
+
+
+<!--
+
+10/07
+09.10 risolto problema di colazioni vuote
+
+-->
