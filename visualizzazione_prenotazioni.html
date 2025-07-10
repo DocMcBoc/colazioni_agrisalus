@@ -27,23 +27,36 @@
     gap: 0.5rem;
     margin-bottom: 1rem;
     }
+        
     #activeDaysContainer button {
-      background: #94d3ac;
-      color: white;
-      border: none;
+      background: #fefcf8; /* colore sfondo uguale a body */
+      color: #333;         /* testo scuro */
+      border: 1px solid #ccc; /* bordo grigio chiaro */
       border-radius: 6px;
       padding: 0.4rem 0.8rem;
       cursor: pointer;
       font-weight: 600;
       font-size: 0.9rem;
-      transition: background-color 0.3s ease;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
     }
-    #activeDaysContainer button:hover {
-      background: #6ea686;
+
+    #activeDaysContainer button.hasBookings {
+      background: #94d3ac; /* verde chiaro per prenotazioni */
+      color: white;
+      border-color: #7bb68a; /* bordo leggermente più scuro verde */
     }
+
     #activeDaysContainer button.selected {
-      background: #FFA500
+      background: #FFA500 !important; /* arancione selezione */
+      color: white;
+      border-color: #cc8400 !important; /* bordo arancione più scuro */
     }
+
+    #activeDaysContainer button:hover {
+      border-color: #999; /* bordo un po' più scuro al passaggio mouse */
+    }
+
+
     input[type="date"] {
       padding: 0.5rem;
       font-size: 1rem;
@@ -88,6 +101,16 @@
         padding: 1rem;
       }
     }
+
+      #activeDaysContainer button.hasBookings {
+    background: #94d3ac; /* verde pastello per giorni con prenotazioni */
+    color: white;
+  }
+
+  #activeDaysContainer button.selected {
+    background: #FFA500 !important; /* arancione selezione */
+    color: white;
+  }
   </style>
 </head>
 <body>
@@ -268,6 +291,7 @@ async function renderActiveDays() {
   const container = document.getElementById("activeDaysContainer");
   container.innerHTML = "";
 
+  // Prendi tutte le date con prenotazioni dal database
   const allSnapshot = await getDocs(bookingsCol);
   const datesSet = new Set();
   allSnapshot.forEach(docSnap => {
@@ -275,14 +299,14 @@ async function renderActiveDays() {
     if (data.date) datesSet.add(data.date);
   });
 
-    const today = new Date().toISOString().slice(0, 10);
-    const uniqueDates = Array.from(datesSet)
-      .filter(dateStr => dateStr >= today)
-      .sort();
+  const dayNames = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+  const today = new Date();
 
-  uniqueDates.forEach(dateStr => {
-    const date = new Date(dateStr);
-    const dayNames = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+  // Crea i 5 giorni da oggi in poi
+  for (let i = 0; i < 5; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+    const dateStr = date.toISOString().slice(0, 10);
     const weekday = dayNames[date.getDay()];
     const d = date.getDate();
     const m = date.getMonth() + 1;
@@ -291,6 +315,11 @@ async function renderActiveDays() {
     btn.textContent = `${weekday} ${d}-${String(m).padStart(2, "0")}`;
     btn.title = dateStr;
 
+    // Se la data ha prenotazioni, aggiungi la classe hasBookings
+    if (datesSet.has(dateStr)) {
+      btn.classList.add("hasBookings");
+    }
+
     btn.onclick = () => {
       document.getElementById("date").value = dateStr;
       setupRealtimeListener(dateStr);
@@ -298,8 +327,9 @@ async function renderActiveDays() {
     };
 
     container.appendChild(btn);
-  });
+  }
 }
+
 
 
     // Evidenzia il giorno selezionato tra quelli attivi
@@ -318,17 +348,15 @@ async function renderActiveDays() {
 
     // Caricamento iniziale
     window.addEventListener("load", async () => {
-      await renderActiveDays();
+  await renderActiveDays();
 
-      const today = new Date().toISOString().slice(0,10);
-      // Se oggi è tra le date attive selezionalo, altrimenti la prima data attiva
-      const activeDates = Array.from(document.querySelectorAll("#activeDaysContainer button")).map(b => b.title);
-      const dateToSelect = activeDates.includes(today) ? today : (activeDates[0] || today);
+  const today = new Date().toISOString().slice(0,10);
 
-      document.getElementById("date").value = dateToSelect;
-      highlightActiveDay(dateToSelect);
-      setupRealtimeListener(dateToSelect);
-    });
+  document.getElementById("date").value = today;
+  highlightActiveDay(today);
+  setupRealtimeListener(today);
+});
+
   </script>
 
 
@@ -341,5 +369,6 @@ async function renderActiveDays() {
 10/07
 09.10 risolto problema di colazioni vuote
 09.16 cancellati giorni passati
+09.48 solo cinque giorni da oggi, modifica per bottoni attivi
 
 -->
