@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Prenotazioni giornaliere</title>
+  <title>Planner giornaliero</title>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
     body {
@@ -115,7 +115,7 @@
 </head>
 <body>
 
-  <h1>📅 Prenotazioni giornaliere</h1>
+  <h1>📅 Planner giornaliero</h1>
 
   <div id="activeDaysContainer">
     <!-- Pulsanti giorni con prenotazioni generate qui -->
@@ -126,7 +126,7 @@
 
 
     <div class="card" id="breadCard">
-    <h2>🍞 Pane del Giorno</h2>
+    <h2>Pane</h2>
     <div id="breadList">
         <p>Seleziona una data per vedere il pane disponibile.</p>
     </div>
@@ -135,7 +135,7 @@
 
 
   <div class="card">
-    <h2>Programma Giornaliero</h2>
+    <h2>Colazioni</h2>
     <div id="breakfastList"></div>
   </div>
 
@@ -249,7 +249,7 @@ function renderBookings(data, list) {
         });
 
         if (!anyBread) {
-            container.innerHTML = "<p>Nessuna prenotazione (per ora).</p>";
+            container.innerHTML = "<p>Nessuna prenotazione (per ora)</p>";
         }
         
 
@@ -370,5 +370,6 @@ async function renderActiveDays() {
 09.10 risolto problema di colazioni vuote
 09.16 cancellati giorni passati
 09.48 solo cinque giorni da oggi, modifica per bottoni attivi
+16.06 aggiornamento titoli schede
 
 -->
