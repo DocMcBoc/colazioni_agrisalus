@@ -275,7 +275,10 @@ async function renderActiveDays() {
     if (data.date) datesSet.add(data.date);
   });
 
-  const uniqueDates = Array.from(datesSet).sort();
+    const today = new Date().toISOString().slice(0, 10);
+    const uniqueDates = Array.from(datesSet)
+      .filter(dateStr => dateStr >= today)
+      .sort();
 
   uniqueDates.forEach(dateStr => {
     const date = new Date(dateStr);
@@ -337,5 +340,6 @@ async function renderActiveDays() {
 
 10/07
 09.10 risolto problema di colazioni vuote
+09.16 cancellati giorni passati
 
 -->
