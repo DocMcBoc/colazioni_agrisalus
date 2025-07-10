@@ -312,7 +312,7 @@ async function renderActiveDays() {
     const m = date.getMonth() + 1;
 
     const btn = document.createElement("button");
-    btn.textContent = `${weekday} ${d}-${String(m).padStart(2, "0")}`;
+    btn.textContent = `${weekday.toLowerCase()} ${d}`;
     btn.title = dateStr;
 
     // Se la data ha prenotazioni, aggiungi la classe hasBookings
@@ -371,5 +371,6 @@ async function renderActiveDays() {
 09.16 cancellati giorni passati
 09.48 solo cinque giorni da oggi, modifica per bottoni attivi
 16.06 aggiornamento titoli schede
+16.23 tolto il mese
 
 -->
