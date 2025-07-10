@@ -224,14 +224,9 @@
   color: white !important;
   border-color: #CC8400 !important; /* un arancione più scuro per il bordo */
 }
-
     
   </style>
-
-
 </head>
-
-
 
 <body>
   <div id="birthdayBanner" style="display: none; font-size: 1.5rem; color: var(--accent); text-align: center; margin-bottom: 1rem;">
@@ -239,7 +234,7 @@
   </div>
 
   <div class="header-bar" style="flex-direction: row; align-items: center; justify-content: space-between;">
-    <h1 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">🍴 Prenotazioni colazione    </h1>
+    <h1 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">🍴 Prenotazioni colazione </h1>
     <label for="date" style="display:none;">
       <input type="date" id="date" style="border: none; background: transparent; color: #555; font-size: 1rem; cursor: pointer; padding: 0; margin: 0; width: auto;" />
     </label>
@@ -473,10 +468,6 @@ function closeEditModal() {
       const slotDiv = document.createElement("div");
       slotDiv.className = "booking-card";
 
-      // Modifica per larghezza e flex
-      // slotDiv.style.flex = "0 0 48%";
-      // slotDiv.style.boxSizing = "border-box";
-
       slotDiv.innerHTML = `
         <h3>${slot} - ${nextSlot}</h3>
         <span>${totalBooked} ${prenotataText} / ${remaining} rimanenti</span>
@@ -543,7 +534,6 @@ function closeEditModal() {
     }
   });
 
-  // Render prenotazioni solo pane
 // Render prenotazioni solo pane
 onlyBreadBookings
   .sort((a, b) => {
@@ -576,8 +566,6 @@ onlyBreadBookings
 
 }
 
-
-  // Renderizza giorni con prenotazioni attive (bottone)
 // Renderizza giorni con prenotazioni attive (bottone)
 async function renderActiveDays() {
   const container = document.getElementById("activeDaysContainer");
@@ -595,53 +583,52 @@ async function renderActiveDays() {
 
   const dayNames = ['lun', 'mar', 'mer', 'gio', 'ven', 'sab', 'dom'];
 
-  for (let week = 0; week < 3; week++) {
-    const row = document.createElement("div");
-    row.style.cssText = `
-      display: flex;
-      flex-wrap: nowrap;
-      gap: 0.5rem;
-      margin-bottom: 0.1rem;
-    `;
+  // Usa display grid nel container per 7 colonne
+  container.style.display = "grid";
+  container.style.gridTemplateColumns = "repeat(7, 1fr)";
+  container.style.gap = "0.5rem";
 
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(startDate);
-      date.setDate(startDate.getDate() + week * 7 + i);
+  // Totale giorni = 3 settimane * 7 giorni = 21
+  for (let i = 0; i < 21; i++) {
+    const date = new Date(startDate);
+    date.setDate(startDate.getDate() + i);
 
-      const yyyy = date.getFullYear();
-      const mm = String(date.getMonth() + 1).padStart(2, '0');
-      const dd = String(date.getDate()).padStart(2, '0');
-      const dateStr = `${yyyy}-${mm}-${dd}`;
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${yyyy}-${mm}-${dd}`;
 
-      const btn = document.createElement("button");
-      btn.textContent = `${dayNames[i]} ${dd}/${mm}`;
-      btn.dataset.date = dateStr;
-      btn.style.border = "1px solid #999";
+    const btn = document.createElement("button");
+    btn.textContent = `${dayNames[date.getDay() === 0 ? 6 : date.getDay() - 1]} ${dd}/${mm}`;
+    btn.dataset.date = dateStr;
+    btn.style.border = "1px solid #999";
+    btn.style.padding = "0.25rem";
+    btn.style.boxSizing = "border-box";
+    btn.style.width = "100%";
 
-      if (daysSet.has(dateStr)) {
-        btn.style.backgroundColor = "#c8e6c9"; // verde chiaro
-        btn.style.borderColor = "#a5d6a7";
-      }
-
-      btn.onclick = () => {
-        document.getElementById("date").value = dateStr;
-
-        if (window.breadDatePicker) window.breadDatePicker.setDate(dateStr, true);
-        if (window.breakfastDatePicker) window.breakfastDatePicker.setDate(dateStr, true);
-
-        renderList();
-        highlightSelectedDay(dateStr);
-        document.getElementById("formDateDesc").textContent = `Data selezionata: ${dd}/${mm}/${yyyy}`;
-      };
-
-      row.appendChild(btn);
+    if (daysSet.has(dateStr)) {
+      btn.style.backgroundColor = "#c8e6c9"; // verde chiaro
+      btn.style.borderColor = "#a5d6a7";
     }
 
-    container.appendChild(row);
+    btn.onclick = () => {
+      document.getElementById("date").value = dateStr;
+
+      if (window.breadDatePicker) window.breadDatePicker.setDate(dateStr, true);
+      if (window.breakfastDatePicker) window.breakfastDatePicker.setDate(dateStr, true);
+
+      renderList();
+      highlightSelectedDay(dateStr);
+      document.getElementById("formDateDesc").textContent = `Data selezionata: ${dd}/${mm}/${yyyy}`;
+    };
+
+    container.appendChild(btn);
   }
 
   highlightSelectedDay(document.getElementById("date").value);
 }
+
+
 
 
 function highlightSelectedDay(day) {
@@ -1244,6 +1231,9 @@ function createDuplicateBreadModal() {
 
 09/07
 15.28 fasce orarie incolonnate, prenotazioni in linee da 3
-15.48 modifica icone duplica e cancella
+
+10/07 
+09.42 giorni davvero su linee da 7
+
 
 -->
