@@ -248,24 +248,23 @@
     </div>
   </div>
 
-<div class="container">
-  <div class="left-column">
-    <div class="card">
+  <div class="forms-row" style="display: flex; gap: 1rem; margin-top: 1rem;">
+    <div class="card" style="flex: 1;">
       <h2>Aggiungi Prenotazioni Pane</h2>
       <p class="muted" id="breadDateDesc"></p>
       <form id="breadForm">
         <label style="margin-top: 1rem; display: flex; align-items: center; gap: 0.4rem;">
-        <img src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png" alt="calendario" style="width: 18px; height: 18px;" />
-        <input type="text" id="breadDate" placeholder="Data prenotazione" required
-          style="border: none; background: #fffaf0; color: #555; font-size: 1rem; padding: 0.3rem 0.6rem; border-radius: 6px; border: 1px solid #ddd; width: 100%;" />
-      </label>
+          <img src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png" alt="calendario" style="width: 18px; height: 18px;" />
+          <input type="text" id="breadDate" placeholder="Data prenotazione" required
+            style="border: none; background: #fffaf0; color: #555; font-size: 1rem; padding: 0.3rem 0.6rem; border-radius: 6px; border: 1px solid #ddd; width: 100%;" />
+        </label>
         <label>Ospite
           <input type="text" id="breadOwner" placeholder="Filemazio" required />
         </label>
         <label style="margin-top: 1rem;">Tipo di pane
           <input type="text" id="breadType" placeholder="Tipo di pane" required />
         </label>
-                <label>Fascia Oraria
+        <label>Fascia Oraria
           <select id="breadTimeSlot" required>
             <option value="07:30">07:30</option>
             <option value="08:00">08:00</option>
@@ -283,15 +282,15 @@
       </form>
     </div>
 
-    <div class="card">
+    <div class="card" style="flex: 1;">
       <h2>Aggiungi Nuova Colazione</h2>
       <p class="muted" id="formDateDesc"></p>
       <form id="breakfastForm">
         <label style="margin-top: 1rem; display: flex; align-items: center; gap: 0.4rem;">
-        <img src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png" alt="calendario" style="width: 18px; height: 18px;" />
-        <input type="text" id="breakfastDate" placeholder="Data prenotazione" required
-          style="border: none; background: #fffaf0; color: #555; font-size: 1rem; padding: 0.3rem 0.6rem; border-radius: 6px; border: 1px solid #ddd; width: 100%;" />
-      </label>
+          <img src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png" alt="calendario" style="width: 18px; height: 18px;" />
+          <input type="text" id="breakfastDate" placeholder="Data prenotazione" required
+            style="border: none; background: #fffaf0; color: #555; font-size: 1rem; padding: 0.3rem 0.6rem; border-radius: 6px; border: 1px solid #ddd; width: 100%;" />
+        </label>
         <label>Ospite
           <input type="text" id="ownerName" placeholder="Filemazio" required />
         </label>
@@ -344,19 +343,20 @@
     </div>
   </div>
 
-  <div class="right-column">
-    <div class="card">
+  <div class="lists-row" style="display: flex; gap: 1rem; margin-top: 1rem;">
+    <div class="card" style="flex: 1;">
       <h2>Pane</h2>
       <div id="breadOnlyList"></div>
     </div>
 
-    <div class="card">
+    <div class="card" style="flex: 1;">
       <h2>Colazioni</h2>
       <p class="muted" id="summary"></p>
       <div id="breakfastList"></div>
     </div>
   </div>
-</div>
+</body>
+
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
@@ -506,7 +506,6 @@ function closeEditModal() {
             font-size: 0.95rem; 
             white-space: nowrap;
             min-width: 140px;">
-            <span style="display:flex; align-items:center; gap: 0.15rem;">🍽️ <strong>${b.numBreakfasts}</strong></span>
             <span style="display:flex; align-items:center; gap: 0.15rem;">👤 <strong>${b.numAdults}</strong></span>
             ${b.numChildren > 0 ? `<span style="display:flex; align-items:center; gap: 0.15rem;">👶 <strong>${b.numChildren}</strong></span>` : ""}
             ${b.numSeats > 0 ? `<span style="display:flex; align-items:center; gap: 0.15rem;">🪑 <strong>${b.numSeats}</strong></span>` : ""}
@@ -588,8 +587,8 @@ async function renderActiveDays() {
   container.style.gridTemplateColumns = "repeat(7, 1fr)";
   container.style.gap = "0.5rem";
 
-  // Totale giorni = 3 settimane * 7 giorni = 21
-  for (let i = 0; i < 21; i++) {
+  // Totale giorni = 2 settimane * 7 giorni = 14
+  for (let i = 0; i < 14; i++) {
     const date = new Date(startDate);
     date.setDate(startDate.getDate() + i);
 
@@ -1235,6 +1234,14 @@ function createDuplicateBreadModal() {
 10/07 
 09.42 giorni davvero su linee da 7
 16.12 aggiornamento titoli schede
+
+21/07
+18.33 
+Nuove prenotazioni pane/colazioni sono scomode da raggiungere dovendo scorrere la pagina. Forse da mettere tra loro paralleli, sotto il calendario proviamo e vediamo come vi trovate
+Di conseguenza mettere i pannelli  pane e colazioni paralleli tra loro sotto quelli di prenotazione come sopra
+Togliere la terza settimana del calendario no problem
+Togliere il numero totale dei coperti di ogni prenotazione (coltello piatto forchetta) no problem
+
 
 
 -->
