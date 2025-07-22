@@ -298,7 +298,7 @@
 
     <div class="card" style="flex: 1;">
       <h2>Aggiungi Nuova Colazione</h2>
-      <p class="muted" id="formDateDesc"></p>
+      <p class="muted" id="formDateDesc" style="display: none;"></p>
       <form id="breakfastForm">
         <label style="margin-top: 1rem; display: flex; align-items: center; gap: 0.4rem;">
           <img src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png" alt="calendario" style="width: 18px; height: 18px;" />
@@ -348,6 +348,11 @@
             <option value="11:30">11:30</option>
           </select>
         </label>
+            <!-- casella da spuntare -->
+        <div style="margin-top: 1rem; display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap;">
+          <input type="checkbox" id="chargeFlag" />
+          <label for="chargeFlag" style="cursor: pointer; margin: 0;">Da addebitare</label>
+        </div>
         <label style="margin-top: 1rem;">Note (opzionale)
           <textarea id="notes"></textarea>
         </label>
@@ -638,9 +643,6 @@ async function renderActiveDays() {
     renderNextDayBreakfastSummary();
 }
 
-
-
-
 function highlightSelectedDay(day) {
   const buttons = document.querySelectorAll("#activeDaysContainer button");
   buttons.forEach(btn => {
@@ -648,15 +650,24 @@ function highlightSelectedDay(day) {
   });
 }
   // Inizializza data a oggi - cambio data alle 12.00
-    function setToday() {
-      const now = new Date();
-      if (now.getHours() >= 12) {
-        now.setDate(now.getDate() + 1);
+      function setToday() {
+        const now = new Date();
+        if (now.getHours() >= 12) {
+          now.setDate(now.getDate() + 1);
+        }
+        const todayStr = now.toISOString().slice(0, 10);
+
+        // Imposta tutti e 3 i campi data
+        document.getElementById("date").value = todayStr;
+        document.getElementById("breadDate").value = todayStr;
+        document.getElementById("breakfastDate").value = todayStr;
+
+        // Aggiorna flatpickr (se inizializzati)
+        if (window.breadDatePicker) window.breadDatePicker.setDate(todayStr, true);
+        if (window.breakfastDatePicker) window.breakfastDatePicker.setDate(todayStr, true);
+
+        document.getElementById("formDateDesc").textContent = `Data selezionata: ${todayStr.split("-").reverse().join("/")}`;
       }
-      const todayStr = now.toISOString().slice(0, 10);
-      document.getElementById("date").value = todayStr;
-      document.getElementById("formDateDesc").textContent = `Data selezionata: ${todayStr.split("-").reverse().join("/")}`;
-    }
 
   // Calcola colazioni totali da adulti + bambini
   function calcBreakfasts(adults, children) {
@@ -672,7 +683,12 @@ function highlightSelectedDay(day) {
     const numAdults = Number(document.getElementById("numAdults").value);
     const numChildren = Number(document.getElementById("numChildren").value);
     const timeSlot = document.getElementById("timeSlot").value;
-    const notes = document.getElementById("notes").value.trim();
+    let notes = document.getElementById("notes").value.trim();
+    const chargeFlag = document.getElementById("chargeFlag").checked;
+
+    if (chargeFlag) {
+      notes = notes ? `${notes}\nDa addebitare` : "Da addebitare";
+    }
     // const bread = document.getElementById("bread").value.trim();
     const numSeats = Number(document.getElementById("numSeats").value) || 0;
     const numBreakfasts = calcBreakfasts(numAdults, numChildren);
@@ -908,34 +924,12 @@ document.getElementById("breadForm").addEventListener("submit", async e => {
   });
 
   // Carica pagina
-  window.addEventListener("load", () => {
-    setToday();
-    renderList();
-    renderActiveDays();
-    flatpickr.localize(flatpickr.l10ns.it);
-
-function onCalendarDateChange(selectedDates, dateStr) {
-  document.getElementById("date").value = dateStr;
-
-  renderList();
-  highlightSelectedDay(dateStr);
-  document.getElementById("formDateDesc").textContent = `Data selezionata: ${dateStr.split("-").reverse().join("/")}`;
-}
-
-window.breadDatePicker = flatpickr("#breadDate", {
-  dateFormat: "Y-m-d",
-  defaultDate: new Date(),
-  locale: "it",
-  onChange: onCalendarDateChange
-});
-
-window.breakfastDatePicker = flatpickr("#breakfastDate", {
-  dateFormat: "Y-m-d",
-  defaultDate: new Date(),
-  locale: "it",
-  onChange: onCalendarDateChange
-});
-  });
+    window.addEventListener('load', async () => {
+      setToday();
+      renderList();
+      renderActiveDays();
+      await setupFlatpickrWithActiveDays();
+    });
 
 async function toggleCompleted(id, currentlyCompleted) {
   if (currentlyCompleted) {
@@ -1286,6 +1280,20 @@ Di conseguenza mettere i pannelli  pane e colazioni paralleli tra loro sotto que
 Togliere la terza settimana del calendario no problem
 Togliere il numero totale dei coperti di ogni prenotazione (coltello piatto forchetta) no problem
 
+22/07
+11.36
+Alle 12 imposta come giorno corrente il giorno successivo
+Aggiunta totale colazioni di domani
+
+16.47
+Tolta "Data selezionata: 23/07/2025" sotto ad "Aggiungi Nuova Colazione"
+Flag "da addebitare" per mettere automaticamente la nota
+Alle 12 imposta come giorno corrente il giorno successivo E non visualizza la prenotazione
+
+
+TO DO
+Visualizzare anche nel prenotatore il totale della giornata divisi adulti/bambini? (magari al posto della scritta attuale?) potrebbe avere senso
+Completare il pane
 
 
 -->
