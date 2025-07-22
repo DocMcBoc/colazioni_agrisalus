@@ -240,13 +240,27 @@
     </label>
   </div>
 
-  <div class="active-days-card">
-    <h2>Calendario prenotazioni</h2>
-    <p class="muted">Seleziona un giorno per visualizzare o modificare le prenotazioni.</p>
-    <div id="activeDaysContainer" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-      <!-- Pulsanti generati dinamicamente -->
+    <div class="active-days-card">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2>Calendario prenotazioni</h2>
+        <div id="nextDaySummary" style="
+          background-color: #fff3cd;
+          border: 1px solid #ffeeba;
+          border-radius: 8px;
+          padding: 0.5rem 1rem;
+          font-size: 0.95rem;
+          color: #856404;
+          min-width: 200px;
+          text-align: right;
+        ">
+          Caricamento...
+        </div>
+      </div>
+      <p class="muted">Seleziona un giorno per visualizzare o modificare le prenotazioni.</p>
+      <div id="activeDaysContainer" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+        <!-- Pulsanti generati dinamicamente -->
+      </div>
     </div>
-  </div>
 
   <div class="forms-row" style="display: flex; gap: 1rem; margin-top: 1rem;">
     <div class="card" style="flex: 1;">
@@ -449,11 +463,6 @@ function closeEditModal() {
   list.style.gap = "1.5rem";
   breadOnlyList.innerHTML = "";
 
-  // Aggiunta per due schede per riga
-  // list.style.display = "flex";
-  // list.style.flexWrap = "wrap";
-  // list.style.gap = "1rem";
-
   const slots = ["07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30"];
   const maxPerSlot = 15;
 
@@ -625,6 +634,8 @@ async function renderActiveDays() {
   }
 
   highlightSelectedDay(document.getElementById("date").value);
+
+    renderNextDayBreakfastSummary();
 }
 
 
@@ -636,12 +647,16 @@ function highlightSelectedDay(day) {
     btn.classList.toggle("selected", btn.dataset.date === day);
   });
 }
-  // Inizializza data a oggi
-  function setToday() {
-    const today = new Date().toISOString().slice(0, 10);
-    document.getElementById("date").value = today;
-    document.getElementById("formDateDesc").textContent = `Data selezionata: ${today.split("-").reverse().join("/")}`;
-  }
+  // Inizializza data a oggi - cambio data alle 12.00
+    function setToday() {
+      const now = new Date();
+      if (now.getHours() >= 12) {
+        now.setDate(now.getDate() + 1);
+      }
+      const todayStr = now.toISOString().slice(0, 10);
+      document.getElementById("date").value = todayStr;
+      document.getElementById("formDateDesc").textContent = `Data selezionata: ${todayStr.split("-").reverse().join("/")}`;
+    }
 
   // Calcola colazioni totali da adulti + bambini
   function calcBreakfasts(adults, children) {
@@ -1200,7 +1215,36 @@ function createDuplicateBreadModal() {
   });
 }
 
+//visualizzatore colazioni del giorno successivo
+async function renderNextDayBreakfastSummary() {
+  const summaryContainer = document.getElementById("nextDaySummary");
+  if (!summaryContainer) return;
 
+  const now = new Date();
+  const nextDay = new Date(now);
+  nextDay.setDate(now.getDate() + 1);
+  const yyyy = nextDay.getFullYear();
+  const mm = String(nextDay.getMonth() + 1).padStart(2, "0");
+  const dd = String(nextDay.getDate()).padStart(2, "0");
+  const nextDateStr = `${yyyy}-${mm}-${dd}`;
+
+  const bookings = await getData(nextDateStr);
+  const breakfastBookings = bookings.filter(b => !b.breadOnly);
+
+  const totalAdults = breakfastBookings.reduce((sum, b) => sum + (b.numAdults || 0), 0);
+  const totalChildren = breakfastBookings.reduce((sum, b) => sum + (b.numChildren || 0), 0);
+
+  summaryContainer.innerHTML = `
+    <div style="font-weight: bold;">
+      Prenotazioni per domani (${dd}/${mm}):
+    </div>
+    <div style="margin-top: 0.3rem; display: flex; gap: 1rem; align-items: center;">
+      <span style="display: flex; align-items: center; gap: 0.3rem;">👤 <strong>${totalAdults}</strong></span>
+      <span style="display: flex; align-items: center; gap: 0.3rem;">👶 <strong>${totalChildren}</strong></span>
+    </div>
+  `;
+  
+}
 
 </script>
 </body>
@@ -1238,13 +1282,10 @@ function createDuplicateBreadModal() {
 21/07
 18.33 
 Nuove prenotazioni pane/colazioni sono scomode da raggiungere dovendo scorrere la pagina. Forse da mettere tra loro paralleli, sotto il calendario proviamo e vediamo come vi trovate
-Di conseguenza mettere i pannelli  pane e colazioni paralleli tra loro sotto quelli di prenotazione 
-Togliere la terza settimana del calendario 
-Togliere il numero totale dei coperti di ogni prenotazione (coltello piatto forchetta) 
+Di conseguenza mettere i pannelli  pane e colazioni paralleli tra loro sotto quelli di prenotazione come sopra
+Togliere la terza settimana del calendario no problem
+Togliere il numero totale dei coperti di ogni prenotazione (coltello piatto forchetta) no problem
 
-22/07
-11.36
-Alle 12 imposta come giorno corrente il giorno successivo
-Aggiunta totale colazioni di domani
+
 
 -->
