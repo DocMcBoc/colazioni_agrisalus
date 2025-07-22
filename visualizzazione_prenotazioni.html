@@ -205,7 +205,6 @@ function renderBookings(data, list) {
         item.className = "booking-details";
         const noteText = b.notes || "";
         item.innerHTML = `
-            <span>🍽️ ${b.numBreakfasts}</span>
             <span>👤 ${b.numAdults}</span>
             ${b.numChildren > 0 ? `<span>👶 ${b.numChildren}</span>` : ""}
             ${b.numSeats > 0 ? `<span>🪑 ${b.numSeats}</span>` : ""}
@@ -396,5 +395,8 @@ async function renderActiveDays() {
 09.35
 Alle 12 imposta come giorno corrente il giorno successivo 
 Aggiunto totale colazioni del giorno (diviso adulti/bambini)
+
+16.14
+Tolta icona dei piatti
 
 -->
