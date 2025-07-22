@@ -115,9 +115,9 @@
 </head>
 <body>
 
-  <h1>
+<h1>
   <img src="https://raw.githubusercontent.com/DocMcBoc/colazioni_agrisalus/main/logo.png" alt="Logo" style="height: 1.8em; vertical-align: middle; margin-right: 0.5rem;">
-  Planner giornaliero
+  Prenotazioni giornaliere
 </h1>
 
   <div id="activeDaysContainer">
@@ -137,10 +137,11 @@
 
 
 
-  <div class="card">
-    <h2>Colazioni</h2>
-    <div id="breakfastList"></div>
-  </div>
+    <div class="card">
+      <h2>Colazioni</h2>
+        <p id="totalePrenotazioni" style="margin-top: 1rem; font-weight: 600;"></p>
+      <div id="breakfastList"></div>
+    </div>
 
    <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
@@ -164,15 +165,21 @@
 function renderBookings(data, list) {
   list.innerHTML = "";
 
-  // Filtra solo le vere prenotazioni colazione
   const breakfastBookings = data.filter(b =>
     b.timeSlot && b.timeSlot.trim() !== "" && b.numBreakfasts && b.numBreakfasts > 0
   );
 
   if (breakfastBookings.length === 0) {
     list.innerHTML = "<p>Nessuna prenotazione (per ora).</p>";
+    document.getElementById("totalePrenotazioni").textContent = "";
     return;
   }
+
+  // Calcola e mostra i totali
+  const totaleAdulti = breakfastBookings.reduce((sum, b) => sum + (b.numAdults || 0), 0);
+  const totaleBambini = breakfastBookings.reduce((sum, b) => sum + (b.numChildren || 0), 0);
+  const summary = document.getElementById("totalePrenotazioni");
+  summary.innerHTML = `Totale prenotazioni: 👤 ${totaleAdulti} ${totaleBambini > 0 ? `&nbsp;&nbsp;👶 ${totaleBambini}` : ""}`;
 
   const slots = ["07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30"];
   const maxPerSlot = 15;
@@ -198,7 +205,7 @@ function renderBookings(data, list) {
         item.className = "booking-details";
         const noteText = b.notes || "";
         item.innerHTML = `
-            <span>🥞 ${b.numBreakfasts}</span>
+            <span>🍽️ ${b.numBreakfasts}</span>
             <span>👤 ${b.numAdults}</span>
             ${b.numChildren > 0 ? `<span>👶 ${b.numChildren}</span>` : ""}
             ${b.numSeats > 0 ? `<span>🪑 ${b.numSeats}</span>` : ""}
@@ -214,6 +221,7 @@ function renderBookings(data, list) {
     }
   });
 }
+
 
 
     // Renderizza il pane del giorno in base ai dati prenotazioni per la data selezionata
@@ -303,7 +311,11 @@ async function renderActiveDays() {
   });
 
   const dayNames = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
-  const today = new Date();
+  const now = new Date();
+    if (now.getHours() >= 12) {
+      now.setDate(now.getDate() + 1);
+    }
+    const today = now;
 
   // Crea i 5 giorni da oggi in poi
   for (let i = 0; i < 5; i++) {
@@ -353,7 +365,11 @@ async function renderActiveDays() {
     window.addEventListener("load", async () => {
   await renderActiveDays();
 
-  const today = new Date().toISOString().slice(0,10);
+    const now = new Date();
+  if (now.getHours() >= 12) {
+    now.setDate(now.getDate() + 1);
+  }
+  const today = now.toISOString().slice(0,10);
 
   document.getElementById("date").value = today;
   highlightActiveDay(today);
@@ -375,5 +391,10 @@ async function renderActiveDays() {
 09.48 solo cinque giorni da oggi, modifica per bottoni attivi
 16.06 aggiornamento titoli schede
 16.23 tolto il mese
+
+22/07
+09.35
+Alle 12 imposta come giorno corrente il giorno successivo 
+Aggiunto totale colazioni del giorno (diviso adulti/bambini)
 
 -->
