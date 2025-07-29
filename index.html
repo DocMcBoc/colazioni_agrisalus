@@ -955,7 +955,7 @@ document.getElementById("breadForm").addEventListener("submit", async e => {
 
 async function toggleCompleted(id, currentlyCompleted) {
   if (currentlyCompleted) {
-    const conferma = confirm("Vuoi riaprire la colazione?");
+    const conferma = confirm("Vuoi riaprire la prenotazione?");
     if (!conferma) return;
   }
   const docRef = doc(db, "prenotazioni", id);
