@@ -561,6 +561,15 @@ onlyBreadBookings
     paneDiv.style.borderRadius = "8px";
     paneDiv.style.marginBottom = "0.5rem";
     paneDiv.style.boxShadow = "inset 0 0 3px rgba(0,0,0,0.05)";
+
+    // Aggiungi la classe per completato se necessario
+    if (b.completed) {
+      paneDiv.classList.add("booking-completed");
+      // Rimuovi lo sfondo personalizzato perché la classe gestisce il background
+      paneDiv.style.background = "";
+      paneDiv.style.boxShadow = ""; // opzionale, per usare solo la classe
+    }
+
     paneDiv.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; font-weight: bold;">
         <span>${b.ownerName}</span>
@@ -573,7 +582,20 @@ onlyBreadBookings
       <div>
         <em>${b.bread}</em> — <small>${b.timeSlot || "Orario non specificato"}</small>
       </div>
+      <button style="
+        margin-top: 0.8rem; 
+        padding: 0.3rem 0.6rem; 
+        border: none; 
+        border-radius: 6px; 
+        background-color: ${b.completed ? '#6c757d' : '#94d3ac'}; 
+        color: white; 
+        cursor: pointer;"
+        onclick="toggleCompleted('${b.id}', ${b.completed})"
+      >
+        ${b.completed ? 'Riapri' : 'Completata'}
+      </button>
     `;
+
     breadOnlyList.appendChild(paneDiv);
   });
 
@@ -1290,10 +1312,8 @@ Tolta "Data selezionata: 23/07/2025" sotto ad "Aggiungi Nuova Colazione"
 Flag "da addebitare" per mettere automaticamente la nota
 Alle 12 imposta come giorno corrente il giorno successivo E non visualizza la prenotazione
 
-
-TO DO
-Visualizzare anche nel prenotatore il totale della giornata divisi adulti/bambini? (magari al posto della scritta attuale?) potrebbe avere senso
-Completare il pane
+29/07
+8.58 Pulsante completamento pane
 
 
 -->
