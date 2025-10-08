@@ -783,33 +783,36 @@ document.getElementById("breadForm").addEventListener("submit", async e => {
 
 
   // Funzione per edit
-  async function editEntry(id) {
-    editingId = id;
-    const docRef = doc(db, "prenotazioni", id);
-    const docSnap = await getDoc(docRef);
+async function editEntry(id) {
+  editingId = id;
+  const docRef = doc(db, "prenotazioni", id);
+  const docSnap = await getDoc(docRef);
 
-    if (!docSnap.exists()) {
-      alert("Prenotazione non trovata");
-      return;
-    }
-
-    const entry = docSnap.data();
-
-    // Crea o mostra form modifica (modal)
-    if (!document.getElementById("editModal")) {
-      createEditModal();
-    }
-
-    document.getElementById("editOwnerName").value = entry.ownerName;
-    document.getElementById("editNumAdults").value = entry.numAdults;
-    document.getElementById("editNumChildren").value = entry.numChildren;
-    document.getElementById("editTimeSlot").value = entry.timeSlot;
-    document.getElementById("editNotes").value = entry.notes || "";
-    document.getElementById("editBread").value = entry.bread || "";
-    document.getElementById("editNumBreakfasts").textContent = calcBreakfasts(entry.numAdults, entry.numChildren);
-    document.getElementById("editNumSeats").value = entry.numSeats || 0;
-    document.getElementById("editModal").style.display = "block";
+  if (!docSnap.exists()) {
+    alert("Prenotazione non trovata");
+    return;
   }
+
+  const entry = docSnap.data();
+
+  // Crea o mostra form modifica (modal)
+  if (!document.getElementById("editModal")) {
+    createEditModal();
+  }
+
+  // Popola il modal con i dati esistenti
+  document.getElementById("editOwnerName").value = entry.ownerName;
+  document.getElementById("editNumAdults").value = entry.numAdults || 0;
+  document.getElementById("editNumChildren").value = entry.numChildren || 0;
+  document.getElementById("editNumSeats").value = entry.numSeats || 0;
+  document.getElementById("editTimeSlot").value = entry.timeSlot || "";
+  document.getElementById("editNotes").value = entry.notes || "";
+  document.getElementById("editBread").value = entry.bread || "";
+  document.getElementById("editNumBreakfasts").textContent = calcBreakfasts(entry.numAdults || 0, entry.numChildren || 0);
+
+  // Mostra il modal
+  document.getElementById("editModal").style.display = "block";
+}
 
   // Crea modal modifica (inserito dinamicamente)
   function createEditModal() {
@@ -883,48 +886,51 @@ document.getElementById("breadForm").addEventListener("submit", async e => {
     });
 
     document.getElementById("editForm").addEventListener("submit", async e => {
-      e.preventDefault();
+  e.preventDefault();
 
-      const ownerName = document.getElementById("editOwnerName").value.trim();
-      const numAdults = Number(document.getElementById("editNumAdults").value);
-      const numChildren = Number(document.getElementById("editNumChildren").value);
-      const timeSlot = document.getElementById("editTimeSlot").value;
-      const notes = document.getElementById("editNotes").value.trim();
-      // const bread = document.getElementById("editBread").value.trim();
-      const numSeats = Number(document.getElementById("editNumSeats").value);
-      const numBreakfasts = calcBreakfasts(numAdults, numChildren);
+  const ownerName = document.getElementById("editOwnerName").value.trim();
+  const numAdults = Number(document.getElementById("editNumAdults").value);
+  const numChildren = Number(document.getElementById("editNumChildren").value);
+  const numSeats = Number(document.getElementById("editNumSeats").value);
+  const timeSlot = document.getElementById("editTimeSlot").value;
+  const notes = document.getElementById("editNotes").value.trim();
+  const bread = document.getElementById("editBread").value.trim();
+  const numBreakfasts = calcBreakfasts(numAdults, numChildren);
 
-      if (!ownerName || numAdults < 0 || numChildren < 0) {
-        alert("Compila correttamente tutti i campi obbligatori.");
-        return;
-      }
+  if (!ownerName || numAdults < 0 || numChildren < 0) {
+    alert("Compila correttamente tutti i campi obbligatori.");
+    return;
+  }
 
-      try {
-          const docRef = doc(db, "prenotazioni", editingId);
-          const oldSnap = await getDoc(docRef);
-          const oldData = oldSnap.data();
-          const completed = oldData?.completed ?? false;
+  try {
+    const docRef = doc(db, "prenotazioni", editingId);
+    const oldSnap = await getDoc(docRef);
+    const oldData = oldSnap.data();
+    const completed = oldData?.completed ?? false;
+    const breadOnly = oldData?.breadOnly ?? false;
 
-          await updateDoc(docRef, {
-            ownerName,
-            numAdults,
-            numChildren,
-            numSeats,
-            timeSlot,
-            notes,
-            numBreakfasts,
-            date: document.getElementById("date").value,
-            completed 
-          });
-
-        modal.style.display = "none";
-        editingId = null;
-        renderList();
-        renderActiveDays();
-      } catch (err) {
-        alert("Errore nel salvataggio: " + err.message);
-      }
+    await updateDoc(docRef, {
+      ownerName,
+      numAdults,
+      numChildren,
+      numSeats,
+      timeSlot,
+      notes,
+      bread: bread || "", // Include bread field, allow empty string
+      numBreakfasts,
+      date: document.getElementById("date").value,
+      completed,
+      breadOnly // Preserve breadOnly flag
     });
+
+    document.getElementById("editModal").style.display = "none";
+    editingId = null;
+    renderList();
+    renderActiveDays();
+  } catch (err) {
+    alert("Errore nel salvataggio: " + err.message);
+  }
+});
 
     // Aggiorna colazioni totali quando adulti o bambini cambiano
     const updateBreakfastsCount = () => {
@@ -1314,6 +1320,9 @@ Alle 12 imposta come giorno corrente il giorno successivo E non visualizza la pr
 
 29/07
 8.58 Pulsante completamento pane
+9.26 Modifica in toggleCompleted ("Vuoi riaprire la prenotazione?");
 
+08/10
+16.22 Corretto problema di salvataggio note in colazioni già esistenti e tipo di pane in prenotazioni già esistenti.
 
 -->
