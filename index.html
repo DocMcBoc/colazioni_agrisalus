@@ -1268,6 +1268,58 @@ async function renderNextDayBreakfastSummary() {
   
 }
 
+
+  // ====================== CANCELLA AUTOMATICAMENTE TUTTE LE PRENOTAZIONI 2025 ======================
+  // Questo codice si avvia automaticamente al caricamento della pagina.
+  // Dopo averlo eseguito una volta, ricordati di CANCELLARE questo blocco.
+
+  async function deleteAll2025BookingsAutomatically() {
+    console.log("%c🗑️ INIZIO CANCELLAZIONE AUTOMATICA 2025...", "color:#e63946; font-weight:bold");
+
+    try {
+      const q = query(
+        bookingsCol,
+        where("date", ">=", "2025-01-01"),
+        where("date", "<=", "2025-12-31")
+      );
+
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        console.log("%c✅ Nessuna prenotazione 2025 trovata.", "color:#4caf50");
+        return;
+      }
+
+      const deletePromises = [];
+      snapshot.forEach((docSnap) => {
+        deletePromises.push(deleteDoc(docSnap.ref));
+      });
+
+      await Promise.all(deletePromises);
+
+      console.log(`%c✅ Cancellate ${deletePromises.length} prenotazioni del 2025!`, "color:#4caf50; font-size:1.1em");
+
+      // Aggiorna l’interfaccia dopo la cancellazione
+      await renderList();
+      await renderActiveDays();
+
+    } catch (err) {
+      console.error("❌ Errore durante la cancellazione 2025:", err);
+      alert("Errore durante la cancellazione automatica 2025:\n" + err.message);
+    }
+  }
+
+  // Esegui automaticamente al caricamento della pagina
+  window.addEventListener('load', () => {
+    // ←←←←←  AGGIUNGI QUESTA RIGA QUI SOTTO  ←←←←←
+    deleteAll2025BookingsAutomatically();
+  }, { once: true });   // "once: true" garantisce che si esegua solo una volta
+</script>
+
+
+
+
+
 </script>
 </body>
 </html>
