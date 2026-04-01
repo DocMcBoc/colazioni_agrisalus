@@ -1268,56 +1268,6 @@ async function renderNextDayBreakfastSummary() {
   
 }
 
-<!-- 
-  // ====================== CANCELLA AUTOMATICAMENTE TUTTE LE PRENOTAZIONI ======================
-  // Questo codice si avvia automaticamente al caricamento della pagina.
-
-  async function deleteAll2025BookingsAutomatically() {
-    console.log("%c🗑️ INIZIO CANCELLAZIONE AUTOMATICA 2025...", "color:#e63946; font-weight:bold");
-
-    try {
-      const q = query(
-        bookingsCol,
-        where("date", ">=", "2025-01-01"),
-        where("date", "<=", "2025-12-31")
-      );
-
-      const snapshot = await getDocs(q);
-
-      if (snapshot.empty) {
-        console.log("%cNessuna prenotazione trovata.", "color:#4caf50");
-        return;
-      }
-
-      const deletePromises = [];
-      snapshot.forEach((docSnap) => {
-        deletePromises.push(deleteDoc(docSnap.ref));
-      });
-
-      await Promise.all(deletePromises);
-
-      console.log(`%cCancellate ${deletePromises.length} prenotazioni`);
-
-      // Aggiorna l’interfaccia dopo la cancellazione
-      await renderList();
-      await renderActiveDays();
-
-    } catch (err) {
-      console.error("Errore durante la cancellazione", err);
-      alert("Errore durante la cancellazione\n" + err.message);
-    }
-  }
-
-  // Esegui automaticamente al caricamento della pagina
-  window.addEventListener('load', () => {
-    deleteAll2025BookingsAutomatically();
-  }, { once: true });   // "once: true" garantisce che si esegua solo una volta
-
-
-  // 
--->
-
-
 </script>
 </body>
 </html>
