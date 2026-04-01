@@ -220,12 +220,15 @@
 
 .flatpickr-day.selected, 
 .flatpickr-day.selected:hover {
-  background: #FFA500 !important; /* arancione */
+  background: #FFA500 !important;
   color: white !important;
-  border-color: #CC8400 !important; /* un arancione più scuro per il bordo */
+  border-color: #CC8400 !important;
 }
     
   </style>
+
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script> <!-- caricamento EmailJS -->
+
 </head>
 
 <body>
@@ -393,8 +396,42 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   const bookingsCol = collection(db, "prenotazioni");
-
   let editingId = null;
+
+  emailjs.init("yFqgNV0BX9R3tynxF");
+
+  //invio mail dopo le 19
+
+async function sendLateBookingEmail(booking) {
+  const now = new Date();
+  const ora = now.getHours();
+  if (ora < 19) return;   // Solo dopo le 19:00
+
+  const addedAt = `${ora}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+  const templateParams = {
+    date: booking.date,
+    type: booking.breadOnly ? "Solo Pane" : "Colazione",
+    ownerName: booking.ownerName || "—",
+    timeSlot: booking.timeSlot || "—",
+    numAdults: booking.numAdults || 0,
+    numChildren: booking.numChildren || 0,
+    numSeats: booking.numSeats || 0,
+    notes: booking.notes || "—",
+    addedAt: addedAt
+  };
+
+  try {
+    await emailjs.send(
+      "service_5wnzs2o",
+      "template_rcfil2t",
+      templateParams
+    );
+    console.log("%cEmail di notifica inviata", "color:#4caf50; font-weight:bold");
+  } catch (err) {
+    console.error("Errore invio email con EmailJS:", err);
+  }
+}
 
   // Ottieni prenotazioni per una data
   async function getData(date) {
@@ -726,6 +763,17 @@ function highlightSelectedDay(day) {
       await addEntry({ 
   date, ownerName, numAdults, numChildren, numSeats, timeSlot, notes, numBreakfasts, completed: false 
 });
+      // Invia email se la prenotazione è dopo le 19:00
+      await sendLateBookingEmail({
+        date: date,
+        ownerName: ownerName,
+        timeSlot: timeSlot,
+        numAdults: numAdults,
+        numChildren: numChildren,
+        numSeats: numSeats,
+        notes: notes,
+        breadOnly: false
+      });
       const currentDate = document.getElementById("breakfastDate").value;
       e.target.reset();
       document.getElementById("breakfastDate").value = currentDate;
@@ -766,6 +814,18 @@ document.getElementById("breadForm").addEventListener("submit", async e => {
       completed: false,
       breadOnly: true
     });
+
+          // Invia email se la prenotazione è dopo le 19:00
+      await sendLateBookingEmail({
+        date: date,
+        ownerName: ownerName,
+        timeSlot: breadTimeSlot,
+        numAdults: 0,
+        numChildren: 0,
+        numSeats: 0,
+        notes: bread ? `Pane: ${bread}` : "",
+        breadOnly: true
+      });
 
       const currentDate = document.getElementById("date").value;
       e.target.reset();
@@ -1327,5 +1387,10 @@ Alle 12 imposta come giorno corrente il giorno successivo E non visualizza la pr
 
 31/03
 Eliminate prenotazioni 2025 ed aggiunto codice (disattivato) per cancellazioni future.
+
+01/04
+12.45 Eliminato codice per cancellazioni future (bug?).
+18.59 Caricata funzione invio mail per prenotazioni dopo le 19.
+
 
 -->
