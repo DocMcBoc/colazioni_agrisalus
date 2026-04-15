@@ -667,6 +667,27 @@ async function openDuplicateModal(id) {
     window.duplicateDatePickerInstance.clear();
   }
   document.getElementById("duplicateModal").style.display = "flex";
+
+  // ==================== BANNER COMPLEANNO SILVIA ====================
+function checkBirthdayBanner() {
+  const banner = document.getElementById("birthdayBanner");
+  if (!banner) return;
+
+  const oggi = new Date();
+  const mese = oggi.getMonth();     // 0 = gennaio, 11 = dicembre
+  const giorno = oggi.getDate();
+
+  // 18 dicembre
+  if (mese === 11 && giorno === 18) {
+    banner.style.display = "block";
+  } else {
+    banner.style.display = "none";
+  }
+}
+
+// Esegui al caricamento della pagina
+window.addEventListener('load', checkBirthdayBanner);
+
 }
 
 function createDuplicateModal() {
