@@ -1,0 +1,865 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA6Hu72qf0jJOolOJNEn00I5cd5XAYY9KM",
+  authDomain: "colazioni-agrisalus.firebaseapp.com",
+  projectId: "colazioni-agrisalus",
+  storageBucket: "colazioni-agrisalus.firebasestorage.app",
+  messagingSenderId: "194863060744",
+  appId: "1:194863060744:web:3b7f3ba3b5865e6bdcbebd"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const bookingsCol = collection(db, "prenotazioni");
+
+let editingId = null;
+emailjs.init("yFqgNV0BX9R3tynxF");
+
+//invio mail dopo le 19
+async function sendLateBookingEmail(booking) {
+  const now = new Date();
+  const ora = now.getHours();
+  if (ora < 19) return; // Solo dopo le 19:00
+  const addedAt = `${ora}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const templateParams = {
+    date: booking.date,
+    type: booking.breadOnly ? "Solo Pane" : "Colazione",
+    ownerName: booking.ownerName || "—",
+    timeSlot: booking.timeSlot || "—",
+    numAdults: booking.numAdults || 0,
+    numChildren: booking.numChildren || 0,
+    numSeats: booking.numSeats || 0,
+    notes: booking.notes || "—",
+    addedAt: addedAt
+  };
+  try {
+    await emailjs.send(
+      "service_5wnzs2o",
+      "template_rcfil2t",
+      templateParams
+    );
+    console.log("%cEmail di notifica inviata", "color:#4caf50; font-weight:bold");
+  } catch (err) {
+    console.error("Errore invio email con EmailJS:", err);
+  }
+}
+
+// Ottieni prenotazioni per una data
+async function getData(date) {
+  const q = query(bookingsCol, where("date", "==", date));
+  const snapshot = await getDocs(q);
+  const results = [];
+  snapshot.forEach(docSnap => results.push({ id: docSnap.id, ...docSnap.data() }));
+  return results;
+}
+
+// Ottieni tutte le prenotazioni (senza filtro)
+async function getAllData() {
+  const snapshot = await getDocs(bookingsCol);
+  const results = [];
+  snapshot.forEach(docSnap => results.push({ id: docSnap.id, ...docSnap.data() }));
+  return results;
+}
+
+async function getActiveDatesSet() {
+  const allData = await getAllData();
+  return new Set(allData.map(b => b.date));
+}
+
+// Aggiungi prenotazione
+async function addEntry(data) {
+  await addDoc(bookingsCol, data);
+}
+
+// Aggiorna prenotazione
+async function updateEntry(id, data) {
+  const docRef = doc(db, "prenotazioni", id);
+  await updateDoc(docRef, data);
+}
+
+// Cancella prenotazione
+async function deleteEntry(id) {
+  if (confirm("Sei sicuro di voler eliminare questa prenotazione?")) {
+    const docRef = doc(db, "prenotazioni", id);
+    await deleteDoc(docRef);
+    await renderList();
+    await renderActiveDays();
+  }
+}
+
+window.editEntry = editEntry;
+window.deleteEntry = deleteEntry;
+
+function closeEditModal() {
+  document.getElementById("editModal").style.display = "none";
+  editingId = null;
+}
+
+// Renderizza lista prenotazioni per data
+async function renderList() {
+  const list = document.getElementById("breakfastList");
+  const breadOnlyList = document.getElementById("breadOnlyList");
+  const date = document.getElementById("breadDate").value; // o meglio usare un solo campo data condiviso
+  const data = await getData(date);
+
+  // Separiamo prenotazioni pane e colazione
+  const onlyBreadBookings = data.filter(b => b.breadOnly === true);
+  const breakfastBookings = data.filter(b => !b.breadOnly);
+
+  // Riassunto colazioni
+  const totalBreakfasts = breakfastBookings.reduce((s, b) => s + b.numBreakfasts, 0);
+  const summary = document.getElementById("summary");
+  summary.textContent = `Panoramica per ${date.split("-").reverse().join("/")}. Colazioni Totali: ${totalBreakfasts}`;
+
+  list.innerHTML = "";
+  list.style.display = "flex";
+  list.style.flexDirection = "column";
+  list.style.gap = "1.5rem";
+  breadOnlyList.innerHTML = "";
+
+  const slots = ["07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30"];
+  const maxPerSlot = 15;
+
+  slots.forEach((slot, i) => {
+    const bookings = breakfastBookings.filter(b => b.timeSlot === slot);
+    if (bookings.length > 0) {
+      const totalBooked = bookings.reduce((sum, b) => sum + b.numBreakfasts, 0);
+      const remaining = maxPerSlot - totalBooked;
+      const prenotataText = totalBooked === 1 ? "prenotata" : "prenotate";
+      let nextSlot = slots[i + 1] || slot;
+      const slotDiv = document.createElement("div");
+      slotDiv.className = "booking-card";
+      slotDiv.innerHTML = `
+        <h3>${slot} - ${nextSlot}</h3>
+        <span>${totalBooked} ${prenotataText} / ${remaining} rimanenti</span>
+        <div class="progress-bar" style="
+          background-color: ${remaining === 0 ? 'red' : 'green'};
+          height: 12px;
+          border-radius: 6px;
+          margin-top: 6px;
+          width: ${(totalBooked / maxPerSlot) * 100}%;
+          transition: width 0.3s ease;"></div>
+      `;
+
+      const bookingsContainer = document.createElement("div");
+      bookingsContainer.style.marginTop = "1rem";
+      bookingsContainer.style.display = "grid";
+      bookingsContainer.style.gridTemplateColumns = "repeat(3, 1fr)";
+      bookingsContainer.style.gap = "0.6rem";
+
+      bookings.forEach(b => {
+        const subCard = document.createElement("div");
+        subCard.style.padding = "0.6rem 1rem";
+        subCard.style.borderRadius = "8px";
+        subCard.style.boxShadow = "inset 0 0 5px rgba(0,0,0,0.05)";
+        subCard.style.backgroundColor = b.completed ? "#d3d3d3" : "#fffaf0";
+        if(b.completed) {
+          subCard.classList.add("booking-completed");
+        }
+        subCard.innerHTML = `
+        <div style="font-weight: bold; margin-bottom: 0.3rem;">
+          ${b.ownerName}
+        <div style="
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-top: 0.3rem;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            min-width: 140px;">
+            <span style="display:flex; align-items:center; gap: 0.15rem;">👤 <strong>${b.numAdults}</strong></span>
+            ${b.numChildren > 0 ? `<span style="display:flex; align-items:center; gap: 0.15rem;">👶 <strong>${b.numChildren}</strong></span>` : ""}
+            ${b.numSeats > 0 ? `<span style="display:flex; align-items:center; gap: 0.15rem;">🪑 <strong>${b.numSeats}</strong></span>` : ""}
+          </div>
+        <div class="actions" style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+          <span class="delete-button" onclick="editEntry('${b.id}')" title="Modifica" style="cursor:pointer;">✏️</span>
+          <span class="delete-button" onclick="deleteEntry('${b.id}')" title="Elimina" style="cursor:pointer;">❌</span>
+          <span class="delete-button" onclick="openDuplicateModal('${b.id}')" title="Duplica" style="cursor:pointer;">🔄</span>
+        </div>
+          <button style="margin-top:0.8rem; padding:0.3rem 0.6rem; border:none; border-radius:6px; background-color: ${b.completed ? '#6c757d' : '#94d3ac'}; color:white; cursor:pointer;"
+            onclick="toggleCompleted('${b.id}', ${b.completed})">
+            ${b.completed ? 'Riapri' : 'Completata'}
+          </button>
+            ${b.notes ? `<div style="margin-top: 0.3rem; font-style: italic; color: var(--muted); font-size: 0.9rem;">📝 ${b.notes}</div>` : ""}
+        `;
+        bookingsContainer.appendChild(subCard);
+      });
+      slotDiv.appendChild(bookingsContainer);
+      list.appendChild(slotDiv);
+    }
+  });
+
+  // Render prenotazioni solo pane
+  onlyBreadBookings
+    .sort((a, b) => {
+      const tA = a.timeSlot?.replace(":", "") || "9999";
+      const tB = b.timeSlot?.replace(":", "") || "9999";
+      return Number(tA) - Number(tB);
+    })
+    .forEach(b => {
+      const paneDiv = document.createElement("div");
+      paneDiv.style.background = "#fdf6ee";
+      paneDiv.style.padding = "0.6rem 1rem";
+      paneDiv.style.borderRadius = "8px";
+      paneDiv.style.marginBottom = "0.5rem";
+      paneDiv.style.boxShadow = "inset 0 0 3px rgba(0,0,0,0.05)";
+      if (b.completed) {
+        paneDiv.classList.add("booking-completed");
+        paneDiv.style.background = "";
+        paneDiv.style.boxShadow = "";
+      }
+      paneDiv.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; font-weight: bold;">
+          <span>${b.ownerName}</span>
+          <div class="actions" style="display: flex; gap: 0.5rem;">
+            <span class="delete-button" onclick="editEntry('${b.id}')" title="Modifica" style="cursor: pointer;">✏️</span>
+            <span class="delete-button" onclick="deleteEntry('${b.id}')" title="Elimina" style="cursor: pointer;">❌</span>
+            <span class="delete-button" onclick="openDuplicateBreadModal('${b.id}')" title="Duplica" style="cursor: pointer;">🔄</span>
+          </div>
+        </div>
+        <div>
+          <em>${b.bread}</em> — <small>${b.timeSlot || "Orario non specificato"}</small>
+        </div>
+        <button style="
+          margin-top: 0.8rem;
+          padding: 0.3rem 0.6rem;
+          border: none;
+          border-radius: 6px;
+          background-color: ${b.completed ? '#6c757d' : '#94d3ac'};
+          color: white;
+          cursor: pointer;"
+          onclick="toggleCompleted('${b.id}', ${b.completed})"
+        >
+          ${b.completed ? 'Riapri' : 'Completata'}
+        </button>
+      `;
+      breadOnlyList.appendChild(paneDiv);
+    });
+}
+
+// Renderizza giorni con prenotazioni attive (bottone)
+async function renderActiveDays() {
+  const container = document.getElementById("activeDaysContainer");
+  const allData = await getAllData();
+  const daysSet = new Set(allData.map(b => b.date));
+  container.innerHTML = "";
+
+  const today = new Date();
+  const dayOfWeek = today.getDay(); // 0 (dom) - 6 (sab)
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Se domenica, vai indietro di 6
+  const startDate = new Date(today);
+  startDate.setDate(today.getDate() + mondayOffset); // Lunedì corrente
+
+  const dayNames = ['lun', 'mar', 'mer', 'gio', 'ven', 'sab', 'dom'];
+
+  // Usa display grid nel container per 7 colonne
+  container.style.display = "grid";
+  container.style.gridTemplateColumns = "repeat(7, 1fr)";
+  container.style.gap = "0.5rem";
+
+  for (let i = 0; i < 14; i++) {
+    const date = new Date(startDate);
+    date.setDate(startDate.getDate() + i);
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${yyyy}-${mm}-${dd}`;
+
+    const btn = document.createElement("button");
+    btn.textContent = `${dayNames[date.getDay() === 0 ? 6 : date.getDay() - 1]} ${dd}/${mm}`;
+    btn.dataset.date = dateStr;
+    btn.style.border = "1px solid #999";
+    btn.style.padding = "0.25rem";
+    btn.style.boxSizing = "border-box";
+    btn.style.width = "100%";
+
+    if (daysSet.has(dateStr)) {
+      btn.style.backgroundColor = "#c8e6c9"; // verde chiaro
+      btn.style.borderColor = "#a5d6a7";
+    }
+
+    btn.onclick = () => {
+      document.getElementById("date").value = dateStr;
+      if (window.breadDatePicker) window.breadDatePicker.setDate(dateStr, true);
+      if (window.breakfastDatePicker) window.breakfastDatePicker.setDate(dateStr, true);
+      renderList();
+      highlightSelectedDay(dateStr);
+      document.getElementById("formDateDesc").textContent = `Data selezionata: ${dd}/${mm}/${yyyy}`;
+    };
+    container.appendChild(btn);
+  }
+  highlightSelectedDay(document.getElementById("date").value);
+  renderNextDayBreakfastSummary();
+}
+
+function highlightSelectedDay(day) {
+  const buttons = document.querySelectorAll("#activeDaysContainer button");
+  buttons.forEach(btn => {
+    btn.classList.toggle("selected", btn.dataset.date === day);
+  });
+}
+
+// Inizializza data a oggi - cambio data alle 12.00
+function setToday() {
+  const now = new Date();
+  if (now.getHours() >= 12) {
+    now.setDate(now.getDate() + 1);
+  }
+  const todayStr = now.toISOString().slice(0, 10);
+  // Imposta tutti e 3 i campi data
+  document.getElementById("date").value = todayStr;
+  document.getElementById("breadDate").value = todayStr;
+  document.getElementById("breakfastDate").value = todayStr;
+  // Aggiorna flatpickr (se inizializzati)
+  if (window.breadDatePicker) window.breadDatePicker.setDate(todayStr, true);
+  if (window.breakfastDatePicker) window.breakfastDatePicker.setDate(todayStr, true);
+  document.getElementById("formDateDesc").textContent = `Data selezionata: ${todayStr.split("-").reverse().join("/")}`;
+}
+
+// Calcola colazioni totali da adulti + bambini
+function calcBreakfasts(adults, children) {
+  return Number(adults) + Number(children);
+}
+
+// Submit aggiunta prenotazione
+document.getElementById("breakfastForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const date = document.getElementById("breakfastDate").value;
+  const ownerName = document.getElementById("ownerName").value.trim();
+  const numAdults = Number(document.getElementById("numAdults").value);
+  const numChildren = Number(document.getElementById("numChildren").value);
+  const timeSlot = document.getElementById("timeSlot").value;
+  let notes = document.getElementById("notes").value.trim();
+  const chargeFlag = document.getElementById("chargeFlag").checked;
+  if (chargeFlag) {
+    notes = notes ? `${notes}\nDa addebitare` : "Da addebitare";
+  }
+  const numSeats = Number(document.getElementById("numSeats").value) || 0;
+  const numBreakfasts = calcBreakfasts(numAdults, numChildren);
+
+  if (!date || !ownerName || numAdults < 0 || numChildren < 0) {
+    alert("Compila correttamente tutti i campi obbligatori.");
+    return;
+  }
+
+  try {
+    await addEntry({
+      date, ownerName, numAdults, numChildren, numSeats, timeSlot, notes, numBreakfasts, completed: false
+    });
+    // Invia email se la prenotazione è dopo le 19:00
+    await sendLateBookingEmail({
+      date: date,
+      ownerName: ownerName,
+      timeSlot: timeSlot,
+      numAdults: numAdults,
+      numChildren: numChildren,
+      numSeats: numSeats,
+      notes: notes,
+      breadOnly: false
+    });
+
+    const currentDate = document.getElementById("breakfastDate").value;
+    e.target.reset();
+    document.getElementById("breakfastDate").value = currentDate;
+    if (window.breakfastDatePicker) {
+      window.breakfastDatePicker.setDate(currentDate, true);
+    }
+    renderList();
+    renderActiveDays();
+  } catch (err) {
+    alert("Errore nel salvataggio: " + err.message);
+  }
+});
+
+document.getElementById("breadForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const date = document.getElementById("date").value;
+  const ownerName = document.getElementById("breadOwner").value.trim();
+  const bread = document.getElementById("breadType").value.trim();
+  const breadTimeSlot = document.getElementById("breadTimeSlot").value;
+
+  if (!date || !ownerName || !bread) {
+    alert("Compila correttamente i campi.");
+    return;
+  }
+
+  try {
+    await addEntry({
+      date,
+      ownerName,
+      numAdults: 0,
+      numChildren: 0,
+      timeSlot: breadTimeSlot,
+      bread,
+      notes: "",
+      numBreakfasts: 0,
+      completed: false,
+      breadOnly: true
+    });
+
+    // Invia email se la prenotazione è dopo le 19:00
+    await sendLateBookingEmail({
+      date: date,
+      ownerName: ownerName,
+      timeSlot: breadTimeSlot,
+      numAdults: 0,
+      numChildren: 0,
+      numSeats: 0,
+      notes: bread ? `Pane: ${bread}` : "",
+      breadOnly: true
+    });
+
+    const currentDate = document.getElementById("date").value;
+    e.target.reset();
+    document.getElementById("breadDate").value = currentDate;
+    if (window.breadDatePicker) {
+      window.breadDatePicker.setDate(currentDate, true);
+    }
+    renderList();
+    renderActiveDays();
+  } catch (err) {
+    alert("Errore nel salvataggio: " + err.message);
+  }
+});
+
+// Funzione per edit
+async function editEntry(id) {
+  editingId = id;
+  const docRef = doc(db, "prenotazioni", id);
+  const docSnap = await getDoc(docRef);
+  if (!docSnap.exists()) {
+    alert("Prenotazione non trovata");
+    return;
+  }
+  const entry = docSnap.data();
+
+  if (!document.getElementById("editModal")) {
+    createEditModal();
+  }
+
+  document.getElementById("editOwnerName").value = entry.ownerName;
+  document.getElementById("editNumAdults").value = entry.numAdults || 0;
+  document.getElementById("editNumChildren").value = entry.numChildren || 0;
+  document.getElementById("editNumSeats").value = entry.numSeats || 0;
+  document.getElementById("editTimeSlot").value = entry.timeSlot || "";
+  document.getElementById("editNotes").value = entry.notes || "";
+  document.getElementById("editBread").value = entry.bread || "";
+  document.getElementById("editNumBreakfasts").textContent = calcBreakfasts(entry.numAdults || 0, entry.numChildren || 0);
+
+  document.getElementById("editModal").style.display = "block";
+}
+
+// Crea modal modifica (inserito dinamicamente)
+function createEditModal() {
+  const modal = document.createElement("div");
+  modal.id = "editModal";
+  modal.style.position = 'fixed';
+  modal.style.top = '0';
+  modal.style.left = '0';
+  modal.style.right = '0';
+  modal.style.bottom = '0';
+  modal.style.background = 'rgba(0,0,0,0.5)';
+  modal.style.display = 'flex';
+  modal.style.justifyContent = 'center';
+  modal.style.alignItems = 'center';
+  modal.style.zIndex = '9999';
+  modal.innerHTML = `
+    <div style="background: white; padding: 1rem 2rem; border-radius: 12px; width: 400px; max-width: 95%; position: relative;">
+      <h2>Modifica Prenotazione</h2>
+      <form id="editForm">
+        <label>Ospite
+          <input type="text" id="editOwnerName" required />
+        </label>
+        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+          <label style="flex: 1;">
+            Adulti
+            <input type="number" id="editNumAdults" min="0" max="15" required />
+          </label>
+          <label style="flex: 1;">
+            Bambini
+            <input type="number" id="editNumChildren" min="0" max="15" required />
+          </label>
+          <label style="flex: 1;">
+            Seggiolini
+            <input type="number" id="editNumSeats" min="0" max="15" value="0" required />
+          </label>
+        </div>
+        <label style="margin-top: 1rem;">Fascia Oraria
+          <select id="editTimeSlot">
+            <option value="07:30">07:30</option>
+            <option value="08:00">08:00</option>
+            <option value="08:30">08:30</option>
+            <option value="09:00">09:00</option>
+            <option value="09:30">09:30</option>
+            <option value="10:00">10:00</option>
+            <option value="10:30">10:30</option>
+            <option value="11:00">11:00</option>
+            <option value="11:30">11:30</option>
+          </select>
+        </label>
+        <label style="margin-top: 1rem;">Pane
+          <input type="text" id="editBread" placeholder="Tipo di pane (opzionale)" />
+        </label>
+        <label style="margin-top: 1rem;">Note (opzionale)
+          <textarea id="editNotes"></textarea>
+        </label>
+        <div style="margin-top: 1rem; font-weight: 600;">Totale colazioni: <span id="editNumBreakfasts">0</span></div>
+        <div style="margin-top: 1rem; display: flex; justify-content: flex-end; gap: 1rem;">
+          <button type="button" id="cancelEdit">Annulla</button>
+          <button type="submit">Salva</button>
+        </div>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  document.getElementById("cancelEdit").addEventListener("click", () => {
+    modal.style.display = "none";
+    editingId = null;
+  });
+
+  document.getElementById("editForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const ownerName = document.getElementById("editOwnerName").value.trim();
+    const numAdults = Number(document.getElementById("editNumAdults").value);
+    const numChildren = Number(document.getElementById("editNumChildren").value);
+    const numSeats = Number(document.getElementById("editNumSeats").value);
+    const timeSlot = document.getElementById("editTimeSlot").value;
+    const notes = document.getElementById("editNotes").value.trim();
+    const bread = document.getElementById("editBread").value.trim();
+    const numBreakfasts = calcBreakfasts(numAdults, numChildren);
+
+    if (!ownerName || numAdults < 0 || numChildren < 0) {
+      alert("Compila correttamente tutti i campi obbligatori.");
+      return;
+    }
+
+    try {
+      const docRef = doc(db, "prenotazioni", editingId);
+      const oldSnap = await getDoc(docRef);
+      const oldData = oldSnap.data();
+      const completed = oldData?.completed ?? false;
+      const breadOnly = oldData?.breadOnly ?? false;
+
+      await updateDoc(docRef, {
+        ownerName,
+        numAdults,
+        numChildren,
+        numSeats,
+        timeSlot,
+        notes,
+        bread: bread || "",
+        numBreakfasts,
+        date: document.getElementById("date").value,
+        completed,
+        breadOnly
+      });
+
+      document.getElementById("editModal").style.display = "none";
+      editingId = null;
+      renderList();
+      renderActiveDays();
+    } catch (err) {
+      alert("Errore nel salvataggio: " + err.message);
+    }
+  });
+
+  // Aggiorna colazioni totali quando adulti o bambini cambiano
+  const updateBreakfastsCount = () => {
+    const a = Number(document.getElementById("editNumAdults").value);
+    const c = Number(document.getElementById("editNumChildren").value);
+    document.getElementById("editNumBreakfasts").textContent = calcBreakfasts(a, c);
+  };
+  document.getElementById("editNumAdults").addEventListener("input", updateBreakfastsCount);
+  document.getElementById("editNumChildren").addEventListener("input", updateBreakfastsCount);
+}
+
+// Gestione cambio data
+document.getElementById("date").addEventListener("change", () => {
+  const selectedDate = document.getElementById("date").value;
+  document.getElementById("formDateDesc").textContent = `Data selezionata: ${selectedDate.split("-").reverse().join("/")}`;
+  renderList();
+  renderActiveDays();
+});
+
+// Carica pagina
+window.addEventListener('load', async () => {
+  setToday();
+  renderList();
+  renderActiveDays();
+  await setupFlatpickrWithActiveDays();
+});
+
+async function toggleCompleted(id, currentlyCompleted) {
+  if (currentlyCompleted) {
+    const conferma = confirm("Vuoi riaprire la prenotazione?");
+    if (!conferma) return;
+  }
+  const docRef = doc(db, "prenotazioni", id);
+  await updateDoc(docRef, { completed: !currentlyCompleted });
+  renderList();
+}
+window.toggleCompleted = toggleCompleted;
+
+async function setupFlatpickrWithActiveDays() {
+  const activeDatesSet = await getActiveDatesSet();
+
+  function highlightActiveDaysOnCalendar(date, dayElem) {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${yyyy}-${mm}-${dd}`;
+    if (activeDatesSet.has(dateStr)) {
+      dayElem.style.backgroundColor = '#c8e6c9'; // verde chiaro
+      dayElem.style.borderRadius = '50%';
+    }
+  }
+
+  if(window.breadDatePicker) {
+    window.breadDatePicker.destroy();
+  }
+  window.breadDatePicker = flatpickr("#breadDate", {
+    dateFormat: "Y-m-d",
+    defaultDate: new Date(),
+    locale: "it",
+    onDayCreate: function(dObj, dStr, fp, dayElem) {
+      highlightActiveDaysOnCalendar(dayElem.dateObj, dayElem);
+    }
+  });
+
+  if(window.breakfastDatePicker) {
+    window.breakfastDatePicker.destroy();
+  }
+  window.breakfastDatePicker = flatpickr("#breakfastDate", {
+    dateFormat: "Y-m-d",
+    defaultDate: new Date(),
+    locale: "it",
+    onDayCreate: function(dObj, dStr, fp, dayElem) {
+      highlightActiveDaysOnCalendar(dayElem.dateObj, dayElem);
+    }
+  });
+}
+
+window.addEventListener('load', async () => {
+  await setupFlatpickrWithActiveDays();
+});
+
+// Funzione per aprire modal duplicazione
+async function openDuplicateModal(id) {
+  const docRef = doc(db, "prenotazioni", id);
+  const docSnap = await getDoc(docRef);
+  if (!docSnap.exists()) {
+    alert("Prenotazione non trovata");
+    return;
+  }
+  const entry = docSnap.data();
+
+  if (!document.getElementById("duplicateModal")) {
+    createDuplicateModal();
+  }
+
+  window.duplicateEntryData = { ...entry };
+
+  const dp = document.getElementById("duplicateDatePicker");
+  if (window.duplicateDatePickerInstance) {
+    window.duplicateDatePickerInstance.clear();
+  }
+  document.getElementById("duplicateModal").style.display = "flex";
+}
+
+function createDuplicateModal() {
+  const modal = document.createElement("div");
+  modal.id = "duplicateModal";
+  modal.style.position = 'fixed';
+  modal.style.top = '0';
+  modal.style.left = '0';
+  modal.style.right = '0';
+  modal.style.bottom = '0';
+  modal.style.background = 'rgba(0,0,0,0.5)';
+  modal.style.display = 'flex';
+  modal.style.justifyContent = 'center';
+  modal.style.alignItems = 'center';
+  modal.style.zIndex = '10000';
+  modal.innerHTML = `
+    <div style="background: white; padding: 1rem 2rem; border-radius: 12px; width: 400px; max-width: 95%; position: relative;">
+      <h2>Duplica Prenotazione</h2>
+      <p>Seleziona una o più date su cui duplicare la prenotazione.</p>
+      <input type="text" id="duplicateDatePicker" style="width: 100%; padding: 0.5rem; margin-top: 1rem;" placeholder="Seleziona date..." readonly />
+      <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem;">
+        <button id="cancelDuplicate">Annulla</button>
+        <button id="confirmDuplicate">Duplica</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  window.duplicateDatePickerInstance = flatpickr("#duplicateDatePicker", {
+    mode: "multiple",
+    dateFormat: "Y-m-d",
+    locale: "it",
+    minDate: "today"
+  });
+
+  document.getElementById("cancelDuplicate").addEventListener("click", () => {
+    modal.style.display = "none";
+    window.duplicateEntryData = null;
+  });
+
+  document.getElementById("confirmDuplicate").addEventListener("click", async () => {
+    const selectedDates = window.duplicateDatePickerInstance.selectedDates;
+    if (!selectedDates.length) {
+      alert("Seleziona almeno una data.");
+      return;
+    }
+    const baseData = window.duplicateEntryData;
+    if (!baseData) {
+      alert("Dati prenotazione non trovati.");
+      return;
+    }
+    try {
+      for (const dateObj of selectedDates) {
+        const yyyy = dateObj.getFullYear();
+        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const dd = String(dateObj.getDate()).padStart(2, '0');
+        const dateStr = `${yyyy}-${mm}-${dd}`;
+        const newEntry = {
+          ...baseData,
+          date: dateStr,
+          completed: false
+        };
+        delete newEntry.id;
+        await addEntry(newEntry);
+      }
+      modal.style.display = "none";
+      window.duplicateEntryData = null;
+      renderList();
+      renderActiveDays();
+      alert("Prenotazioni duplicate con successo.");
+    } catch (err) {
+      alert("Errore nella duplicazione: " + err.message);
+    }
+  });
+}
+window.openDuplicateModal = openDuplicateModal;
+
+async function openDuplicateBreadModal(id) {
+  const docRef = doc(db, "prenotazioni", id);
+  const docSnap = await getDoc(docRef);
+  if (!docSnap.exists()) {
+    alert("Prenotazione non trovata");
+    return;
+  }
+  const entry = docSnap.data();
+  if (!entry.breadOnly) {
+    alert("Questa non è una prenotazione solo pane.");
+    return;
+  }
+
+  if (!document.getElementById("duplicateBreadModal")) {
+    createDuplicateBreadModal();
+  }
+
+  window.duplicateBreadEntryData = { ...entry };
+  if (window.duplicateBreadDatePickerInstance) {
+    window.duplicateBreadDatePickerInstance.clear();
+  }
+  document.getElementById("duplicateBreadModal").style.display = "flex";
+}
+window.openDuplicateBreadModal = openDuplicateBreadModal;
+
+function createDuplicateBreadModal() {
+  const modal = document.createElement("div");
+  modal.id = "duplicateBreadModal";
+  modal.style.cssText = `
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5); display: flex;
+    justify-content: center; align-items: center; z-index: 10000;
+  `;
+  modal.innerHTML = `
+    <div style="background: white; padding: 1rem 2rem; border-radius: 12px; width: 400px; max-width: 95%; position: relative;">
+      <h2>Duplica Prenotazione Pane</h2>
+      <p>Seleziona una o più date su cui duplicare la prenotazione.</p>
+      <input type="text" id="duplicateBreadDatePicker" style="width: 100%; padding: 0.5rem; margin-top: 1rem;" placeholder="Seleziona date..." readonly />
+      <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem;">
+        <button id="cancelDuplicateBread">Annulla</button>
+        <button id="confirmDuplicateBread">Duplica</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  window.duplicateBreadDatePickerInstance = flatpickr("#duplicateBreadDatePicker", {
+    mode: "multiple",
+    dateFormat: "Y-m-d",
+    locale: "it",
+    minDate: "today"
+  });
+
+  document.getElementById("cancelDuplicateBread").addEventListener("click", () => {
+    modal.style.display = "none";
+    window.duplicateBreadEntryData = null;
+  });
+
+  document.getElementById("confirmDuplicateBread").addEventListener("click", async () => {
+    const selectedDates = window.duplicateBreadDatePickerInstance.selectedDates;
+    if (!selectedDates.length) {
+      alert("Seleziona almeno una data.");
+      return;
+    }
+    const baseData = window.duplicateBreadEntryData;
+    if (!baseData) {
+      alert("Dati prenotazione non trovati.");
+      return;
+    }
+    try {
+      for (const dateObj of selectedDates) {
+        const yyyy = dateObj.getFullYear();
+        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const dd = String(dateObj.getDate()).padStart(2, '0');
+        const dateStr = `${yyyy}-${mm}-${dd}`;
+        const newEntry = {
+          ...baseData,
+          date: dateStr,
+          completed: false
+        };
+        delete newEntry.id;
+        await addEntry(newEntry);
+      }
+      modal.style.display = "none";
+      window.duplicateBreadEntryData = null;
+      renderList();
+      renderActiveDays();
+      alert("Prenotazioni duplicate con successo.");
+    } catch (err) {
+      alert("Errore nella duplicazione: " + err.message);
+    }
+  });
+}
+
+//visualizzatore colazioni del giorno successivo
+async function renderNextDayBreakfastSummary() {
+  const summaryContainer = document.getElementById("nextDaySummary");
+  if (!summaryContainer) return;
+  const now = new Date();
+  const nextDay = new Date(now);
+  nextDay.setDate(now.getDate() + 1);
+  const yyyy = nextDay.getFullYear();
+  const mm = String(nextDay.getMonth() + 1).padStart(2, "0");
+  const dd = String(nextDay.getDate()).padStart(2, "0");
+  const nextDateStr = `${yyyy}-${mm}-${dd}`;
+  const bookings = await getData(nextDateStr);
+  const breakfastBookings = bookings.filter(b => !b.breadOnly);
+  const totalAdults = breakfastBookings.reduce((sum, b) => sum + (b.numAdults || 0), 0);
+  const totalChildren = breakfastBookings.reduce((sum, b) => sum + (b.numChildren || 0), 0);
+  summaryContainer.innerHTML = `
+    <div style="font-weight: bold;">
+      Prenotazioni per domani (${dd}/${mm}):
+    </div>
+    <div style="margin-top: 0.3rem; display: flex; gap: 1rem; align-items: center;">
+      <span style="display: flex; align-items: center; gap: 0.3rem;">👤 <strong>${totalAdults}</strong></span>
+      <span style="display: flex; align-items: center; gap: 0.3rem;">👶 <strong>${totalChildren}</strong></span>
+    </div>
+  `;
+}

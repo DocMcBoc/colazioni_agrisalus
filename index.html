@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🥐 Prenotazioni Colazione </title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js"></script>
+  
+  <!-- CSS separato -->
+  <link rel="stylesheet" href="styles.css">
+  
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+</head>
+<body>
+  <!-- ====================== BODY IDENTICO AL TUO CODICE ORIGINALE ====================== -->
+  <div id="birthdayBanner" style="display: none; font-size: 1.5rem; color: var(--accent); text-align: center; margin-bottom: 1rem;">
+    🎉 Buon compleanno Silvia! 🎉
+  </div>
+  <div class="header-bar" style="flex-direction: row; align-items: center; justify-content: space-between;">
+    <h1 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">🥐 Prenotazioni colazione </h1>
+    <label for="date" style="display:none;">
+      <input type="date" id="date" style="border: none; background: transparent; color: #555; font-size: 1rem; cursor: pointer; padding: 0; margin: 0; width: auto;" />
+    </label>
+  </div>
+    <div class="active-days-card">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2>Calendario prenotazioni</h2>
+        <div id="nextDaySummary" style="
+          background-color: #fff3cd;
+          border: 1px solid #ffeeba;
+          border-radius: 8px;
+          padding: 0.5rem 1rem;
+          font-size: 0.95rem;
+          color: #856404;
+          min-width: 200px;
+          text-align: right;
+        ">
+          Caricamento...
+        </div>
+      </div>
+      <p class="muted">Seleziona un giorno per visualizzare o modificare le prenotazioni.</p>
+      <div id="activeDaysContainer" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+        <!-- Pulsanti generati dinamicamente -->
+      </div>
+    </div>
+  <div class="forms-row" style="display: flex; gap: 1rem; margin-top: 1rem;">
+    <div class="card" style="flex: 1;">
+      <h2>Aggiungi Prenotazioni Pane</h2>
+      <p class="muted" id="breadDateDesc"></p>
+      <form id="breadForm">
+        <label style="margin-top: 1rem; display: flex; align-items: center; gap: 0.4rem;">
+          <img src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png" alt="calendario" style="width: 18px; height: 18px;" />
+          <input type="text" id="breadDate" placeholder="Data prenotazione" required
+            style="border: none; background: #fffaf0; color: #555; font-size: 1rem; padding: 0.3rem 0.6rem; border-radius: 6px; border: 1px solid #ddd; width: 100%;" />
+        </label>
+        <label>Ospite
+          <input type="text" id="breadOwner" placeholder="Filemazio" required />
+        </label>
+        <label style="margin-top: 1rem;">Tipo di pane
+          <input type="text" id="breadType" placeholder="Tipo di pane" required />
+        </label>
+        <label>Fascia Oraria
+          <select id="breadTimeSlot" required>
+            <option value="07:30">07:30</option>
+            <option value="08:00">08:00</option>
+            <option value="08:30">08:30</option>
+            <option value="09:00">09:00</option>
+            <option value="09:30">09:30</option>
+            <option value="10:00">10:00</option>
+            <option value="10:30">10:30</option>
+            <option value="11:00">11:00</option>
+            <option value="11:30">11:30</option>
+          </select>
+        </label>
+        <button type="submit" style="margin-top: 1rem;">Aggiungi Prenotazione Pane</button>
+      </form>
+    </div>
+    <div class="card" style="flex: 1;">
+      <h2>Aggiungi Nuova Colazione</h2>
+      <p class="muted" id="formDateDesc" style="display: none;"></p>
+      <form id="breakfastForm">
+        <label style="margin-top: 1rem; display: flex; align-items: center; gap: 0.4rem;">
+          <img src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png" alt="calendario" style="width: 18px; height: 18px;" />
+          <input type="text" id="breakfastDate" placeholder="Data prenotazione" required
+            style="border: none; background: #fffaf0; color: #555; font-size: 1rem; padding: 0.3rem 0.6rem; border-radius: 6px; border: 1px solid #ddd; width: 100%;" />
+        </label>
+        <label>Ospite
+          <input type="text" id="ownerName" placeholder="Filemazio" required />
+        </label>
+        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+          <div style="flex: 1; display: flex; flex-direction: column; align-items: flex-start;">
+            <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
+              <span>👤</span>
+              <span>Adulti</span>
+            </label>
+            <input type="number" id="numAdults" min="0" max="15" value="1" required style="width: 100%; margin-top: 0.3rem;" />
+          </div>
+          <div style="flex: 1; display: flex; flex-direction: column; align-items: flex-start;">
+            <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
+              <span>👶</span>
+              <span>Bambini</span>
+            </label>
+            <input type="number" id="numChildren" min="0" max="15" value="0" required style="width: 100%; margin-top: 0.3rem;" />
+          </div>
+          <div style="flex: 1; display: flex; flex-direction: column; align-items: flex-start;">
+            <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
+              <span>🪑</span>
+              <span>Seggiolini</span>
+            </label>
+            <input type="number" id="numSeats" min="0" max="10" value="0" required style="width: 100%; margin-top: 0.3rem;" />
+          </div>
+        </div>
+        <label style="margin-top: 1rem;">Fascia Oraria
+          <select id="timeSlot">
+            <option value="07:30">07:30</option>
+            <option value="08:00">08:00</option>
+            <option value="08:30">08:30</option>
+            <option value="09:00">09:00</option>
+            <option value="09:30">09:30</option>
+            <option value="10:00">10:00</option>
+            <option value="10:30">10:30</option>
+            <option value="11:00">11:00</option>
+            <option value="11:30">11:30</option>
+          </select>
+        </label>
+        <div style="margin-top: 1rem; display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap;">
+          <input type="checkbox" id="chargeFlag" />
+          <label for="chargeFlag" style="cursor: pointer; margin: 0;">Da addebitare</label>
+        </div>
+        <label style="margin-top: 1rem;">Note (opzionale)
+          <textarea id="notes"></textarea>
+        </label>
+        <button type="submit" style="margin-top: 1rem;">Aggiungi</button>
+      </form>
+    </div>
+  </div>
+  <div class="lists-row" style="display: flex; gap: 1rem; margin-top: 1rem;">
+    <div class="card" style="flex: 1;">
+      <h2>Pane</h2>
+      <div id="breadOnlyList"></div>
+    </div>
+    <div class="card" style="flex: 1;">
+      <h2>Colazioni</h2>
+      <p class="muted" id="summary"></p>
+      <div id="breakfastList"></div>
+    </div>
+  </div>
+  <!-- ================================================================================ -->
+</body>
+<script type="module" src="app.js"></script>
+</html>
