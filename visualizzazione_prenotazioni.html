@@ -182,7 +182,7 @@ function renderBookings(data, list) {
   summary.innerHTML = `Totale prenotazioni: 👤 ${totaleAdulti} ${totaleBambini > 0 ? `&nbsp;&nbsp;👶 ${totaleBambini}` : ""}`;
 
   const slots = ["07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30"];
-  const maxPerSlot = 15;
+  const maxPerSlot = 12;
 
   slots.forEach((slot, i) => {
     const bookings = breakfastBookings.filter(b => b.timeSlot === slot);
