@@ -120,7 +120,7 @@ async function renderList() {
   breadOnlyList.innerHTML = "";
 
   const slots = ["07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30"];
-  const maxPerSlot = 15;
+  const maxPerSlot = 12;
 
   slots.forEach((slot, i) => {
     const bookings = breakfastBookings.filter(b => b.timeSlot === slot);
@@ -475,15 +475,15 @@ function createEditModal() {
         <div style="display: flex; gap: 1rem; margin-top: 1rem;">
           <label style="flex: 1;">
             Adulti
-            <input type="number" id="editNumAdults" min="0" max="15" required />
+            <input type="number" id="editNumAdults" min="0" max="12" required />
           </label>
           <label style="flex: 1;">
             Bambini
-            <input type="number" id="editNumChildren" min="0" max="15" required />
+            <input type="number" id="editNumChildren" min="0" max="12" required />
           </label>
           <label style="flex: 1;">
             Seggiolini
-            <input type="number" id="editNumSeats" min="0" max="15" value="0" required />
+            <input type="number" id="editNumSeats" min="0" max="12" value="0" required />
           </label>
         </div>
         <label style="margin-top: 1rem;">Fascia Oraria
