@@ -101,7 +101,7 @@ function closeEditModal() {
 async function renderList() {
   const list = document.getElementById("breakfastList");
   const breadOnlyList = document.getElementById("breadOnlyList");
-  const date = document.getElementById("breadDate").value; // o meglio usare un solo campo data condiviso
+  const date = document.getElementById("breadDate").value; 
   const data = await getData(date);
 
   // Separiamo prenotazioni pane e colazione
@@ -310,11 +310,9 @@ function setToday() {
     now.setDate(now.getDate() + 1);
   }
   const todayStr = now.toISOString().slice(0, 10);
-  // Imposta tutti e 3 i campi data
   document.getElementById("date").value = todayStr;
   document.getElementById("breadDate").value = todayStr;
   document.getElementById("breakfastDate").value = todayStr;
-  // Aggiorna flatpickr (se inizializzati)
   if (window.breadDatePicker) window.breadDatePicker.setDate(todayStr, true);
   if (window.breakfastDatePicker) window.breakfastDatePicker.setDate(todayStr, true);
   document.getElementById("formDateDesc").textContent = `Data selezionata: ${todayStr.split("-").reverse().join("/")}`;
@@ -334,15 +332,13 @@ document.getElementById("breakfastForm").addEventListener("submit", async e => {
   const numChildren = Number(document.getElementById("numChildren").value);
   const timeSlot = document.getElementById("timeSlot").value;
   let notes = document.getElementById("notes").value.trim();
+  
   const chargeFlag = document.getElementById("chargeFlag").checked;
   const bnbFlag = document.getElementById("bnbFlag").checked;
-  if (chargeFlag) {
-    notes = notes ? `${notes}\nDa addebitare` : "Da addebitare";
-  }  
+
   if (chargeFlag) {
     notes = notes ? `${notes}\nDa addebitare` : "Da addebitare";
   }
-  
   const numSeats = Number(document.getElementById("numSeats").value) || 0;
   const numBreakfasts = calcBreakfasts(numAdults, numChildren);
 
@@ -355,7 +351,6 @@ document.getElementById("breakfastForm").addEventListener("submit", async e => {
     await addEntry({
       date, ownerName, numAdults, numChildren, numSeats, timeSlot, notes, numBreakfasts, completed: false, isBnB: bnbFlag
     });
-    // Invia email se la prenotazione è dopo le 19:00
     await sendLateBookingEmail({
       date: date,
       ownerName: ownerName,
@@ -406,7 +401,6 @@ document.getElementById("breadForm").addEventListener("submit", async e => {
       breadOnly: true
     });
 
-    // Invia email se la prenotazione è dopo le 19:00
     await sendLateBookingEmail({
       date: date,
       ownerName: ownerName,
@@ -453,7 +447,7 @@ async function editEntry(id) {
   document.getElementById("editTimeSlot").value = entry.timeSlot || "";
   document.getElementById("editNotes").value = entry.notes || "";
   document.getElementById("editBread").value = entry.bread || "";
-  document.getElementById("editBnbFlag").checked = entry.isBnB || false; // NUOVA RIGA
+  document.getElementById("editBnbFlag").checked = entry.isBnB || false;
   document.getElementById("editNumBreakfasts").textContent = calcBreakfasts(entry.numAdults || 0, entry.numChildren || 0);
 
   document.getElementById("editModal").style.display = "block";
@@ -510,13 +504,12 @@ function createEditModal() {
         <label style="margin-top: 1rem;">Pane
           <input type="text" id="editBread" placeholder="Tipo di pane (opzionale)" />
         </label>
+        
         <div style="margin-top: 1rem; display: flex; align-items: center; gap: 0.4rem;">
           <input type="checkbox" id="editBnbFlag" style="width: auto;" />
           <label for="editBnbFlag" style="cursor: pointer; margin: 0; font-weight: 600;">B&B</label>
         </div>
-        <label style="margin-top: 1rem;">Note (opzionale)
-          <textarea id="editNotes"></textarea>
-        </label>
+
         <label style="margin-top: 1rem;">Note (opzionale)
           <textarea id="editNotes"></textarea>
         </label>
@@ -535,7 +528,7 @@ function createEditModal() {
     editingId = null;
   });
 
-document.getElementById("editForm").addEventListener("submit", async e => {
+  document.getElementById("editForm").addEventListener("submit", async e => {
     e.preventDefault();
     const ownerName = document.getElementById("editOwnerName").value.trim();
     const numAdults = Number(document.getElementById("editNumAdults").value);
@@ -544,7 +537,7 @@ document.getElementById("editForm").addEventListener("submit", async e => {
     const timeSlot = document.getElementById("editTimeSlot").value;
     const notes = document.getElementById("editNotes").value.trim();
     const bread = document.getElementById("editBread").value.trim();
-    const isBnB = document.getElementById("editBnbFlag").checked; // NUOVA RIGA: legge la spunta B&B
+    const isBnB = document.getElementById("editBnbFlag").checked;
     const numBreakfasts = calcBreakfasts(numAdults, numChildren);
 
     if (!ownerName || numAdults < 0 || numChildren < 0) {
@@ -559,7 +552,6 @@ document.getElementById("editForm").addEventListener("submit", async e => {
       const completed = oldData?.completed ?? false;
       const breadOnly = oldData?.breadOnly ?? false;
 
-      // Aggiorna il documento su Firebase includendo isBnB
       await updateDoc(docRef, {
         ownerName,
         numAdults,
@@ -572,10 +564,9 @@ document.getElementById("editForm").addEventListener("submit", async e => {
         date: document.getElementById("date").value,
         completed,
         breadOnly,
-        isBnB // NUOVA RIGA: salva il dato sul database
+        isBnB
       });
 
-      // Chiude il modal e aggiorna la vista
       document.getElementById("editModal").style.display = "none";
       editingId = null;
       renderList();
@@ -660,10 +651,6 @@ async function setupFlatpickrWithActiveDays() {
     }
   });
 }
-
-window.addEventListener('load', async () => {
-  await setupFlatpickrWithActiveDays();
-});
 
 // Funzione per aprire modal duplicazione
 async function openDuplicateModal(id) {
