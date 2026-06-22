@@ -162,6 +162,8 @@ async function renderList() {
         <div style="font-weight: bold; margin-bottom: 0.3rem;">
           ${b.ownerName}
           ${b.isBnB ? '<span style="background-color: #ffd700; color: #856404; font-size: 0.75rem; padding: 0.15rem 0.4rem; border-radius: 4px; margin-left: 0.5rem; vertical-align: middle;">B&B</span>' : ''}
+        </div>
+        <div style="
             display: flex;
             align-items: center;
             gap: 0.6rem;
