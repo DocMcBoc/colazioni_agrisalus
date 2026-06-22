@@ -9,13 +9,11 @@
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js"></script>
   
-  <!-- CSS separato -->
   <link rel="stylesheet" href="styles.css">
   
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
-  <!-- ====================== BODY IDENTICO AL TUO CODICE ORIGINALE ====================== -->
   <div id="birthdayBanner" style="display: none; font-size: 1.5rem; color: var(--accent); text-align: center; margin-bottom: 1rem;">
     🎉 Buon compleanno, Silvia! 🎉
   </div>
@@ -43,8 +41,7 @@
       </div>
       <p class="muted">Seleziona un giorno per visualizzare o modificare le prenotazioni.</p>
       <div id="activeDaysContainer" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-        <!-- Pulsanti generati dinamicamente -->
-      </div>
+        </div>
     </div>
   <div class="forms-row" style="display: flex; gap: 1rem; margin-top: 1rem;">
     <div class="card" style="flex: 1;">
@@ -126,6 +123,7 @@
             <option value="11:30">11:30</option>
           </select>
         </label>
+        
         <div style="margin-top: 1rem; display: flex; align-items: center; gap: 1.5rem; white-space: nowrap;">
           <div style="display: inline-flex; align-items: center; gap: 0.4rem;">
             <input type="checkbox" id="chargeFlag" />
@@ -136,6 +134,7 @@
             <label for="bnbFlag" style="cursor: pointer; margin: 0;">B&B</label>
           </div>
         </div>
+
         <label style="margin-top: 1rem;">Note (opzionale)
           <textarea id="notes"></textarea>
         </label>
@@ -154,7 +153,6 @@
       <div id="breakfastList"></div>
     </div>
   </div>
-  <!-- ================================================================================ -->
 </body>
 <script type="module" src="app.js"></script>
 </html>
